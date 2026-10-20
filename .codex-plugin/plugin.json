@@ -1,0 +1,8 @@
+{
+  "name": "houston-i-love-kroger",
+  "version": "0.1.0",
+  "description": "Plan groceries through the Houston I Love Kroger app API, with exact-store product searches and separate stored history.",
+  "author": {"name": "aipersonalized"},
+  "license": "MIT",
+  "skills": "./skills/"
+}

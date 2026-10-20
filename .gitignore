@@ -1,0 +1,30 @@
+# Keep private workspace guidance, settings and operator evidence out of source.
+/AGENTS.md
+/.agents/
+/.local/
+/.env
+/.env.*
+/.runtime/
+/skills/kroger-api/
+/skills/houston-i-love-kroger/references/project-record.md
+/skills/houston-i-love-kroger/evaluations/
+/skills/houston-i-love-kroger/research/recon/
+/skills/houston-i-love-kroger/research/sources/
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+
+# Dependencies, caches and generated output are not public package inputs.
+.venv/
+__pycache__/
+*.py[cod]
+node_modules/
+.cache/
+dist/
+coverage/
+.DS_Store
+
+# The reviewed first-party research/official_docs manuals remain public.

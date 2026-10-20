@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "publisher": "Houston I Love Kroger project",
+  "inventoryUrl": "repo:/",
+  "appVersion": "0.2.0",
+  "sourceRevision": "working-tree-snapshot",
+  "retrievedAt": "2026-10-20T21:31:55.314635+00:00",
+  "inventorySha256": "870746c1f8b90c3ae955930ead90e5ba4f347e556899c454553db29368cd927b",
+  "counts": {
+    "indexed": 6,
+    "saved": 6,
+    "failed": 0,
+    "reviewedExclusions": 4
+  },
+  "pages": [
+    {
+      "source": "docs/API.md",
+      "path": "pages/API.md",
+      "title": "App HTTP API",
+      "url": "repo:/docs/API.md",
+      "status": "saved",
+      "sha256": "dfb92ac45b0eebd91095d785bcdb2436be75070df17c343ccbd0560be12ee0ab",
+      "bytes": 79290,
+      "retrievedAt": "2026-10-20T21:31:55.314635+00:00",
+      "discovery": "reviewed first-party inventory"
+    },
+    {
+      "source": "docs/USER_GUIDE.md",
+      "path": "pages/USER_GUIDE.md",
+      "title": "Human shopping guide",
+      "url": "repo:/docs/USER_GUIDE.md",
+      "status": "saved",
+      "sha256": "2b2ab237a982cf3f9341f190717bf12492b23c7ba8ab90d41f210a6f9ab9d022",
+      "bytes": 29443,
+      "retrievedAt": "2026-10-20T21:31:55.314635+00:00",
+      "discovery": "reviewed first-party inventory"
+    },
+    {
+      "source": "docs/SELF_HOSTING.md",
+      "path": "pages/SELF_HOSTING.md",
+      "title": "App installation and configuration",
+      "url": "repo:/docs/SELF_HOSTING.md",
+      "status": "saved",
+      "sha256": "08fe3a1ad7522705ea539839f82e63271fd1f7041a6cdf83eed41370d24a79b4",
+      "bytes": 34148,
+      "retrievedAt": "2026-10-20T21:31:55.314635+00:00",
+      "discovery": "reviewed first-party inventory"
+    },
+    {
+      "source": "docs/HISTORY.md",
+      "path": "pages/HISTORY.md",
+      "title": "History prerequisites and operator boundary",
+      "url": "repo:/docs/HISTORY.md",
+      "status": "saved",
+      "sha256": "609f20d4f7cb1290c169c3e5f034b975c7ccb074da5bbce914504bbd4f971bbd",
+      "bytes": 30991,
+      "retrievedAt": "2026-10-20T21:31:55.314635+00:00",
+      "discovery": "reviewed first-party inventory"
+    },
+    {
+      "source": "docs/PROMOTION_SERVICE.md",
+      "path": "pages/PROMOTION_SERVICE.md",
+      "title": "Private promotions service and permission-aware reads",
+      "url": "repo:/docs/PROMOTION_SERVICE.md",
+      "status": "saved",
+      "sha256": "e1229f62a57cfa3a23403beaa0ffb9202341cbf8f4e55dc07859194950f0066b",
+      "bytes": 23525,
+      "retrievedAt": "2026-10-20T21:31:55.314635+00:00",
+      "discovery": "reviewed first-party inventory"
+    },
+    {
+      "source": "docs/KROGER_PERMISSION_REQUEST.md",
+      "path": "pages/KROGER_PERMISSION_REQUEST.md",
+      "title": "Source-permission questions, not a grant",
+      "url": "repo:/docs/KROGER_PERMISSION_REQUEST.md",
+      "status": "saved",
+      "sha256": "6657343bb25fc30e56cbf1187b1f3c4225f759b96ec6c41640d91efa51e686d6",
+      "bytes": 13607,
+      "retrievedAt": "2026-10-20T21:31:55.314635+00:00",
+      "discovery": "reviewed first-party inventory"
+    }
+  ]
+}
