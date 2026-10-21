@@ -1,14 +1,14 @@
 # Turn a grocery request into a checked shopping list
 
-Use the app's current-shopping API alongside the human web interface. The agent
-understands the person's intent and matches returned products; deterministic
+Use the shared microservice's current-shopping API directly. The agent
+infers the person's grocery intent and matches returned products; deterministic
 tools retrieve facts and calculate the selected quantities. Finish with useful
 named choices and a qualified estimate, or the smallest exact gap.
 
 ## Continued From
 
 `SKILL.md` current-shopping route, or a direct current item/estimate request with
-valid installation, recipients, confirmed store and source-backed selections.
+valid installation, permitted task scope, confirmed store and source-backed selections.
 This procedure is never recovery for missing, stale or empty stored data.
 
 ## Resources
@@ -30,18 +30,33 @@ size before assigning a count. Ask only when ambiguity changes a useful choice.
 Do not invent a budget, quantity, dietary restriction or substitution permission.
 A store-only request needs just its lookup inputs; do not demand a grocery list.
 
-Reuse the actual app URL, valid recipient review and confirmed exact store.
-Otherwise use the installation guide and `shopping.py status` to distinguish
-configured capability from actual source access. Certification/synthetic results
+An ordinary request such as "I need milk and coffee; find some good deals" is
+enough to enter this procedure. Derive useful search terms from that request;
+do not ask the person to invoke a command, name the skill or operate another
+interface. A request without quantities can still receive product/deal choices;
+ask quantities only when a requested estimate needs them.
+
+Reuse the bundled service connection, permitted task scope and confirmed exact
+store. Ordinary faithful current product/store display uses the applicable
+Public API terms and the person's request; no separate provider review or
+approval flag is required solely because an assistant participates. Resolve a
+concrete incompatible use or protected-value issue, not unknown general provider
+settings. Do not turn unchanged setup/authority into repeated questions.
+When capability is uncertain, use `shopping.py status` to check the selected
+service identity and distinguish configured capability from actual source access.
+Its `service` must identify `houston-i-love-kroger-shopping`, API version 1;
+the client also checks the `X-Houston-Service` response header. Certification/synthetic results
 are examples, never verified offers. History permission is independent of current
 browsing; its absence does not require the shopper to set up a history database.
 No browser, supplier key or model SDK is needed by this HTTP companion.
+If the client or service is unavailable, give the exact host/operator gap;
+never use or ask the shopper to open, install or use the web app.
 
 ## Step 2: Find and confirm the exact store
 
 If the person has not already confirmed the intended location, run
-`python scripts/shopping.py stores --zip ZIP --base-url BASE_URL
---data-use-approved --json --no-input`, replacing the named inputs. Use a ZIP
+`python scripts/shopping.py stores --zip ZIP
+--json --no-input`, replacing the named inputs. Use a ZIP
 through a channel allowed by the person's privacy rules. Show actual returned
 names/addresses and ask which exact location they intend to visit. Wait for the
 answer; do not select the first result, infer a nearest store or guess an ID.
@@ -60,10 +75,11 @@ installation, store or person's intent invalidates dependent prices and choices.
 
 For each requested grocery/category that needs facts, run
 `python scripts/shopping.py products --store STORE_ID --term TERM
---base-url BASE_URL --data-use-approved --json --no-input`. Use an explicit
+--json --no-input`. Use an explicit
 3–80-character term of at most eight words derived from the request. This is a
 single bounded fuzzy-search page, maximum fifty raw products. Regular-only prices
-are useful; use `deals` when the request specifically asks for promotions.
+are useful; use `deals` for good-deal, sale or discount intent inferred from the
+request, without requiring the person to use the word "promotions".
 Optional `--sort price|savings|percent` changes ordering of this page, not coverage.
 
 Match full source descriptions, brand, package size, sold-by basis and variant
@@ -92,14 +108,14 @@ needs a more specific requested term or a disclosed search gap.
 ## Step 4: Recheck selected items and calculate quantities
 
 For a specific product's facts, use `python scripts/shopping.py product
---store STORE_ID --product-id PRODUCT_ID --base-url BASE_URL --data-use-approved
+--store STORE_ID --product-id PRODUCT_ID
 --json --no-input`. IDs come from actual returned source facts; the product ID
 is exactly thirteen digits, never reconstructed from a name or UPC. Preserve
 the selected variant's source item ID unchanged.
 
 After matching packages and requested quantities, run
 `python scripts/shopping.py estimate --store STORE_ID --item PRODUCT_ID ITEM_ID
-QUANTITY --base-url BASE_URL --data-use-approved --json --no-input`. Repeat
+QUANTITY --json --no-input`. Repeat
 `--item` for one to ten distinct pairs, each whole quantity 1–99. For a larger
 list disclose this per-request bound; separate explicitly scoped estimates do
 not establish a combined total. Do not send prices or silently drop extra lines.
@@ -122,8 +138,10 @@ eligibility verification and checkout changes remain excluded.
 
 ## Step 5: Give a useful list and optional dated context, then finish
 
-Show named packages, requested quantities, supported numeric line costs and a
-clearly qualified full/partial numeric subtotal. Put missing groceries,
+Lead with useful named product/package choices and why each fits the grocery
+request. Distinguish supported discounts from low package outlay. When quantities
+were requested and resolved, show supported numeric line costs and a clearly
+qualified full/partial numeric subtotal. Put missing groceries,
 unresolved lines, currency and checkout exclusions beside the amount. State
 source check times, selected/returned counts where curated, and limited
 coverage. No "best storewide", every-promotion or guaranteed-stock claim follows.
@@ -138,14 +156,15 @@ Stop with the requested list/price answer and one practical next action.
 ## Gotchas
 
 - Live shopping and stored-only reads are explicit alternatives; neither fails
-  over into the other. App access does not itself create recipient rights.
-- Source amounts, app arithmetic, agent package matching and a person's choice
+  over into the other. Service access does not itself create recipient rights.
+- Source amounts, service arithmetic, agent package matching and a person's choice
   are distinct. The tool does not make preference or substitution decisions.
 - No companion command signs in, connects Cart, clips coupons or purchases.
 
 ## Checklist
 
-- [ ] Actual permitted installation/recipients and person-confirmed store accepted.
+- [ ] Permitted current task scope and person-confirmed store accepted; no blanket provider-review gate.
+- [ ] Ordinary grocery intent led to service calls; no shopper web-app task occurred.
 - [ ] Requested items, quantities and preferences preserved, including no matches.
 - [ ] Packages and exact source IDs match; page/source/time bindings checked.
 - [ ] Supported tool arithmetic, unresolved lines and unknown currency/basis clear.
@@ -157,6 +176,8 @@ Reuse unchanged confirmed setup/store/rights and the person's intended list.
 Discard wrong-store, changed-query or malformed responses. After a timeout,
 permission failure or rate limit, explain the observed gap and stop unchanged
 retries; no automatic fallback, result cache, collector or guessed prices.
+Return host execution or service-connection problems to their operator; do not
+recover by using the web app or asking the shopper to use/install it.
 A changed item/price requires a fresh selected estimate, not reuse of an old
 subtotal. `--dry-run` makes no network request or false check-time claim.
 

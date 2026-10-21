@@ -12,9 +12,11 @@ import unittest
 from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts' / 'promotions.py'
+sys.path.insert(0, str(SCRIPT.parent))
 SPEC = importlib.util.spec_from_file_location('promotion_cli', SCRIPT)
 CLI = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CLI)
+sys.path.pop(0)
 
 
 def observation(store='TEST0001', identifier='1'):
@@ -429,6 +431,8 @@ class HTTPTests(unittest.TestCase):
                 body = json.dumps(value).encode()
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/html' if test.mode == 'html' else 'application/json')
+                if test.mode != 'web-app':
+                    self.send_header('X-Houston-Service', 'houston-i-love-kroger-shopping')
                 self.send_header('Content-Length', str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
@@ -457,7 +461,7 @@ class HTTPTests(unittest.TestCase):
         self.assertIn('PromotionsTool', self.requests[-1][3])
 
     def test_redirect_and_html_refused(self):
-        for mode in ['redirect', 'html']:
+        for mode in ['redirect', 'html', 'web-app']:
             self.mode = mode
             with self.assertRaises(CLI.ToolError):
                 CLI.request(self.url, 'status')

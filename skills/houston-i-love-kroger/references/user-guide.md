@@ -1,368 +1,268 @@
-# Install and use the companion plugin
+# Install the companion and ask for grocery help
 
 ## Detailed Content
 
-### 1. Choose human use or assistant use
+### 1. Keep the complete companion together
 
-This companion lets an assistant use the app API alongside the human web page:
-find stores, match requested products/packages, recheck prices and estimate
-quantities. Its explicit current-shopping commands can make the app contact
-Kroger. Separate stored-only commands read collected deals and dated history;
-neither starts collection or manages Cart. For the human page, read
-`research/official_docs/pages/USER_GUIDE.md` in full to use those yourself.
-No browser or supplier credentials are needed by the companion.
+This plugin lets an assistant help with Kroger groceries and deals directly in
+conversation. The assistant understands your request, uses the shared shopping
+microservice, checks returned packages and explains useful choices. The
+companion and web app are independent projects sharing that service. You never
+need to open, install or use the web app for this companion, including recovery.
 
-Original project materials use the included plugin-root MIT LICENSE. Get the complete
-plugin folder or ZIP from its actual supplied source. A folder copy does
-not deploy a service, grant rights to supplier data or qualify an installation.
-To self-host the app, read `research/official_docs/pages/SELF_HOSTING.md` and
-`research/official_docs/pages/PROMOTION_SERVICE.md` in full. They cover the
-operator's private app/service/database setup. Keep tokens and credentials out
-of chat. The assistant only needs the app's public base URL.
+1. Get the complete plugin ZIP from the [plugin repository](https://github.com/aipersonalized/houston-i-love-kroger-plugin)
+   or its supplied release. Extract the whole `houston-i-love-kroger-plugin` folder.
+2. Keep the whole folder together. Its skill is `skills/houston-i-love-kroger/`;
+   `SKILL.md`, `config/connection.json`, scripts, playbooks, references, schemas
+   and manuals are required. Copying just `SKILL.md` leaves it incomplete.
+3. Follow your assistant host's supported local-plugin or Agent Skills import
+   method. The portable core has no provider-specific installation directory.
+   The optional `.codex-plugin/plugin.json` adapter declares the bundled skill;
+   actual host import/discovery remains untested.
+4. If your host can read local files but has no importer, ask it to read the
+   skill's `SKILL.md`. That is manual use rather than verified automatic discovery.
+5. Check that the host can execute Python 3.12+ or use an equivalent permitted
+   HTTP client. The plugin does not install a remote connector. Without that
+   capability, the assistant must explain the host gap; it cannot perform the
+   lookups or replace them with a web-app visit.
 
-### 2. Make the complete skill available to your assistant
+No Node.js, supplier key, private database, provider SDK or model account is
+required by the portable tools. Your assistant host's own requirements remain
+separate. Original project material uses the plugin-root MIT LICENSE; that
+license does not grant rights to supplier data or marks.
 
-1. Extract the complete plugin to its `houston-i-love-kroger-plugin` folder, or
-   open the root of the [plugin's own repository](https://github.com/aipersonalized/houston-i-love-kroger-plugin).
-   Its portable skill is `skills/houston-i-love-kroger` inside that plugin. Keep `SKILL.md`,
-   playbooks, references, schemas, scripts and collected manuals together.
-   Copying only the entry file leaves the skill incomplete.
-2. Follow your assistant host's actual local-skill import or folder instructions.
-   The portable core needs no provider-specific folder. The optional plugin-root
-   `.codex-plugin/plugin.json` adapter follows observed Codex manifest format;
-   actual host import/discovery has not been tested.
-3. If the host reads local files but has no importer, explicitly ask it to read
-   this folder's `SKILL.md`. That is manual use, not verified automatic discovery.
-4. Refresh the session only as that host requires. Ask it to describe the skill.
-   Expect current shopping plus separate stored ZIP choices, completed topics,
-   collected prices/deals and dated history, an actual
-   app URL and permitted data recipients.
-5. Check whether it supports Python execution or a suitable app API client.
-   This bundle does not install a remote connector. If unavailable, follow the
-   human app guide yourself; an installed folder does not create a connector.
+### 2. Ask naturally after installation
 
-No provider API key, model SDK, `agents/openai.yaml` or particular model is
-required. Discovery/import across assistant hosts has not been universally tested.
+You can immediately ask the assistant for grocery help; you do not need to
+supply a service URL, learn command names or request a technical setup workflow.
+For example:
 
-### 3. Establish the URL and permissions
+- "I need milk, eggs and coffee. Help me find some good deals at my Kroger."
+- "Check the price of this package at the store we already chose."
+- "Find two packages of whole milk and rice. Ask me before substituting brands."
 
-1. Get the app base URL from the operator, including its folder path and ending
-   slash, such as the synthetic local example
-   `http://localhost:4173/apps/houston-i-love-kroger/`. Other hosts require HTTPS.
-   You never need to give the assistant a Kroger key, private token or database.
-2. Establish that source rights and user privacy cover every tool, assistant and
-   model provider that receives results. Read `references/source-permissions.md`
-   in full. Asking for help or passing an acknowledgement flag does not grant
-   source/recipient rights. Underlying agreements remain private.
-3. Give the assistant a five-digit ZIP through your permitted privacy channel to
-   find current choices, or explicitly request saved choices; reuse a complete
-   store ID you have already confirmed. It will ask which exact returned
-   name/address you want before checking products. No separate browser visit is
-   required. Collected topics matter only for stored price/deal requests.
-4. Directory metadata and product/history data have separate permissions. A
-   permitted store directory does not establish price access. Use the actual
-   operation's result; a promotion-status gap does not by itself block the directory.
+The assistant infers the requested groceries and whether you want discounts,
+low package prices, an exact price check or a quantity estimate. It asks only
+for missing facts that affect the answer:
 
-Missing recipient permission blocks source-record output. The assistant can
-still explain installation and fixed status without loading disallowed records.
+1. If your exact store is not already confirmed, supply a five-digit ZIP through
+   your permitted privacy channel. It retrieves up to ten choices within the
+   source query's ten-mile radius, shows actual returned names/addresses and
+   waits for your exact choice before product searches. It never chooses the
+   first store or invents distances. A valid earlier store choice is reused.
+2. It searches the shared service for the requested groceries and matches actual
+   descriptions, brands, package sizes and variants. It keeps no-match groceries
+   visible and asks about meaningful substitution/package ambiguity.
+3. It reports a small useful selection with product/package, reported price,
+   supported saving and why each choice fits. A good discount and low package
+   spending are different judgments. Searches cover bounded returned pages,
+   never every product or every store promotion.
+4. If you request quantity costs, it matches your intended packages/quantities
+   and has the service recheck the selected products and calculate. Each estimate
+   accepts 1–10 distinct product/item pairs and whole quantities 1–99. Larger
+   lists remain visible; separate batches do not establish one combined snapshot.
+5. It explains source check dates, unknowns and unresolved lines beside amounts.
+   Current source currency and measure basis are unreported, so numeric totals
+   have no currency symbol or verified budget fit. Tax, fees, coupons, eligibility
+   checks and checkout changes remain excluded. Missing prices are never free.
 
-### 4. Install and check the portable tool
+A product-choice request does not require quantities or a budget. Supply brands,
+package sizes, substitutions or a budget when they matter to you; the assistant
+must not invent them. No companion command signs in, changes Cart, clips coupons,
+purchases anything, starts collection or saves your shopping list.
 
-1. Install Python 3.12 or newer from [Python](https://www.python.org/downloads/)
-   if needed. Open PowerShell on Windows or Terminal on macOS/Linux and run
-   `python --version`. If your system uses `python3`, use that name throughout.
-   Close/reopen the terminal after installation if the command is missing.
-2. Open a terminal in the complete companion folder containing `SKILL.md`.
-   There are no Python packages or AI SDKs to install.
-3. Run `python scripts/shopping.py --help` for current shopping and
-   `python scripts/promotions.py --help` for stored-only operations.
-4. Check your installation:
+### 3. Understand service access and source permissions
 
-   ```text
-   python scripts/shopping.py status --base-url http://localhost:4173/apps/houston-i-love-kroger/ --json --no-input
-   ```
+The tools load the skill's `config/connection.json` automatically. It selects
+`https://aipersonalized.io/api/houston-i-love-kroger/` as the shared-service base.
+A configured destination is not proof of a working or qualified live deployment;
+the assistant reports only actual successful checks and source-backed results.
+The shopper does not supply an app URL or run a local app.
 
-   Replace the address with your actual app URL. `configured: true` exits 0 but
-   does not prove live source access; false exits 3. Check environment/test-data
-   labels. History can remain permission-required while current browsing works.
-   `promotions.py status` separately checks stored service availability.
+An operator deliberately using another compatible service can override the
+bundled connection with `HOUSTON_SERVICE_URL` or `--base-url`. Precedence is
+explicit flag, environment setting, then bundled configuration. The tools refuse
+credentials, query strings and fragments in addresses; HTTPS is required except
+for loopback HTTP. A missing/malformed configuration fails before a request and
+belongs to the maintainer. No unconfigured run silently targets a local web app.
 
-The app must run before this client can connect. The tool makes no private file
-or database reads, follows no redirects, uses no ambient proxy/cookies, retries
-nothing automatically and saves no results. Machine mode prints one JSON object
-and never prompts. Python 3.14 was used for local deterministic qualification;
-other platforms/runtime versions need their own execution checks.
+Ordinary current shopping returns faithful product/store business facts under
+the applicable Public API display terms and your request. It needs no separate
+provider review or approval flag solely because an assistant participates.
+Unknown general provider settings alone do not force count-only output.
+`shopping.py --summary-only` is optional; `--data-use-approved` remains accepted
+as an optional compatibility acknowledgement and grants no rights. Read
+`references/source-permissions.md` in full for private-data, customer-activity,
+storage and reuse limits; keep private agreements and credentials out of chat.
+The assistant resolves a concrete incompatible use without repeating unchanged
+setup. Stored directory and price/history rights remain separate: full
+`promotions.py` output requires its client acknowledgement of actual retained-data
+rights, an implementation safeguard rather than supplier-required provider review.
+Summary still makes a service read and cannot authorize a prohibited path.
 
-### Try current shopping through your assistant
+#### Shared-service privacy and use
 
-1. Check actual recipient retention/secondary-use controls using
-   `references/source-permissions.md`. Do not send private agreements or keys to
-   chat. Reuse a valid existing review. Unknown controls mean fixed summary
-   diagnostics until the record-output gap is resolved.
-2. Ask: "Find Kroger choices for my ZIP, let me choose the store, then help with
-   two packages of whole milk and coffee. Prefer my stated brands and ask before
-   substituting." Supply quantities/package preferences/budget only when wanted.
-3. The assistant runs `shopping.py stores --zip ZIP` at your actual base URL,
-   shows bounded returned names/addresses, and waits for your exact choice.
-   A previous valid store choice is reused. A store-only request finishes here.
-4. It uses `shopping.py products --store STORE_ID --term TERM` for requested
-   groceries, or `deals` for promotion questions. Full records add
-   `--data-use-approved --json --no-input` after actual recipient rights exist.
-   Use `--summary-only` for fixed counts without products/IDs/prices/ZIP.
-5. Review matched brand, package size and variant. Unknown matches and unwanted
-   substitutions stay unresolved. Searches are fuzzy, at most fifty products
-   per page; reported per-unit estimates have no known measure basis.
-6. A direct package check uses `shopping.py product --store STORE_ID
-   --product-id PRODUCT_ID`. Use actual returned thirteen-digit IDs, preserving
-   zeros. Known valid selections do not require repeated store discovery.
-7. For accepted quantities, use `shopping.py estimate --store STORE_ID --item
-   PRODUCT_ID ITEM_ID QUANTITY`, repeating --item for 1–10 distinct selections,
-   whole quantity 1–99. Add the same base URL and output-permission flags.
-   The app freshly rechecks products and calculates; you send no prices.
-8. Read every unresolved line beside the numeric subtotal. The supported live
-   model reports no currency, so the amount is unqualified arithmetic without
-   a currency symbol or verified budget fit. Tax, fees, coupons and checkout
-   changes are excluded. No resolved line means unknown, never free.
-9. Ask separately for past prices when useful. Missing history is a data/rights
-   gap, not permission to start collection. No companion command calls Cart.
+aipersonalized operates the default shared service. Your assistant sends the
+ZIP, chosen store, grocery search terms, selected product/item IDs and quantities
+needed for your request to that service. For current shopping, the service sends
+the needed store and product lookup inputs to Kroger and returns its results.
+It calculates requested quantities itself. Stored-only requests read separately
+permission-approved observations; they do not contact Kroger or add observations.
+Neither route saves your shopping list or search history in the promotion database.
 
-From this folder, a synthetic preview you can copy is:
+The companion tools save no shopping results and use no cookies, Cart session
+or built-in AI service. Your assistant host and chosen model provider receive
+the conversation and tool results through their own systems; their storage,
+training and sharing controls are separate. Ordinary current business-fact
+display has no blanket provider-review prerequisite; known incompatible storage,
+customer-activity or reuse needs a specific resolution under the
+[source-permission guide](source-permissions.md).
+Do not send passwords, supplier keys, account records or payment information.
 
-```text
-python scripts/shopping.py estimate --store TEST0001 --item 0000000000001 00001 2 --summary-only --dry-run --json --no-input
-```
+Cloudflare and hosting infrastructure process connection and request metadata
+to deliver and protect the service. The gateway's service locations use failure
+status and timing diagnostics rather than logging request bodies, search values,
+client addresses or authorization headers. Container logs have size limits;
+that does not establish a fixed retention period. Platform log settings and
+deletion deadlines are not independently verified, and no zero-logging or
+automatic deletion promise is made. Your host may also retain terminal output
+or conversations. Keep private inputs out of public support reports; report
+only the plugin version and fixed error category to the
+[project maintainers](https://github.com/aipersonalized/houston-i-love-kroger-plugin).
+Operators using another service address must supply their own accurate disclosure.
 
-Expect preview/network false/writes false, with no real price or checked time.
-Replace all synthetic identifiers with actual confirmed selections before a
-real request. For an unavailable new route, check the complete base URL and ask
-the operator to update the app; a newer local tool does not update a hosted site.
-For 429/busy, wait; the client never automatically retries or changes modes.
+Use this service for bounded grocery shopping under the
+[Kroger Terms](https://developer.kroger.com/terms) and
+[acceptable-use policy](https://developer.kroger.com/documentation/public/getting-started/acceptable-use).
+Do not harvest a catalog, track customer searches or locations, alter source
+facts, compare competing retailers, or retain, resell or forward source records
+beyond the permitted shopping task. The software's MIT license does not grant
+rights to Kroger content. These notes are included here so companion use never
+depends on opening the web app.
 
-### 5. Choose your store and available collected topics
+### 4. Optional terminal checks
 
-You can ask: "Use the stored service to find Kroger choices for my ZIP. Ask me
-which location I want, then show what fresh collected topics are available."
-Supply your ZIP through a channel permitted by your privacy rules.
+These commands help a person or host maintainer check the portable tools. They
+are not prerequisites the shopper must perform before asking the assistant.
 
-1. Preview with a synthetic ZIP:
-
-   ```text
-   python scripts/promotions.py stores --zip 00000 --summary-only --dry-run --json --no-input
-   ```
-
-   Replace 00000 with your five digits and supply the actual `--base-url`.
-   The preview makes no network request. To read the saved directory after
-   recipient permission is established, remove `--dry-run` and replace
-   `--summary-only` with `--data-use-approved`. Full output includes store choices;
-   summary output deliberately omits ZIP, names, addresses and IDs.
-2. Check the directory's observation date and freshness. Choose the exact store
-   by its returned name and address. The assistant waits for your choice; it
-   does not pick the first result. These are saved results from a limited
-   ten-mile/up-to-ten-location query, not live distances or every nearby store.
-   Missing names/addresses must not be invented.
-3. Discover completed topics using the confirmed ID:
+1. Install [Python 3.12 or newer](https://www.python.org/downloads/) if your
+   execution host needs it. Run `python --version` in PowerShell or Terminal.
+   If your system uses `python3`, use that name throughout. Reopen the terminal
+   after installation if the command is unavailable.
+2. Open a terminal in `skills/houston-i-love-kroger/`, containing `SKILL.md`.
+   There are no Python packages to install.
+3. Inspect the commands and check the selected service:
 
    ```text
-   python scripts/promotions.py topics --store TEST0001 --data-use-approved --json --no-input
+   python scripts/shopping.py --help
+   python scripts/promotions.py --help
+   python scripts/shopping.py status --json --no-input
    ```
 
-   Replace TEST0001 with the exact returned ID and supply your app URL. Each
-   returned topic has a collection date, fresh/stale state and product count.
-   Zero can mean a completed empty topic. Only fresh relevant topics support
-   current-price recommendations. They are saved collection labels, not live
-   grocery search words or a complete store catalog.
-4. Explain which groceries or budget question you want help with. The assistant
-   uses relevant returned fresh topics for the following deal/price/estimate
-   steps. If the intended category is unclear, it asks rather than choosing the
-   first topic. Dated-history-only requests need the confirmed store, not a
-   current topic.
-
-An empty fresh directory means that saved query returned no stores. `no_data`
-means the required saved directory or named completed topics are missing;
-saved topics without readable names cannot be guessed. `stale` means the
-saved facts are too old. Permission or connection failures remain separate.
-The assistant explains the operator/data gap and never calls Kroger or starts
-collection to fill it.
-
-### 6. Read latest collected deals
-
-A useful assistant request is: "Use our stored service for my accepted store
-and approved milk topic. What's a good discount, and what has a low package
-price? Keep the collection date and limited coverage clear." Add a budget,
-brand or category preference when it matters.
-
-1. Preview a request using only synthetic example values:
+   The tool verifies `X-Houston-Service: houston-i-love-kroger-shopping` and
+   status's `service` identity/version. Missing or wrong identity is a
+   compatibility failure. `configured: true` describes source setup rather than
+   proof that a real source search succeeded. Certification/synthetic results
+   remain test data; missing history permission need not block current shopping.
+4. A synthetic preview makes no request and writes no result:
 
    ```text
-   python scripts/promotions.py latest --store TEST0001 --topic milk --summary-only --dry-run --json --no-input
+   python scripts/shopping.py products --store TEST0001 --term milk --summary-only --dry-run --json --no-input
    ```
 
-   Expect `status: preview`, `network: false`, `writes: false`. TEST0001 is
-   synthetic, not a selected store. Replace it and the topic with accepted real
-   values and supply the same `--base-url` as your status check.
-2. Remove `--dry-run` to send a bounded read. `--summary-only` prints fixed
-   state/count/freshness facts rather than product names, prices or store IDs.
-   It still reads the server and cannot authorize a prohibited data path.
-3. Once actual source/recipient rights are established, replace
-   `--summary-only` with `--data-use-approved` to receive deals. That flag
-   acknowledges existing rights; server permission/retention checks still apply.
-4. Read the snapshot observation/completion dates, age, freshness threshold,
-   latest attempt and coverage before using any price. The default operator
-   threshold is 24 hours; it does not guarantee supplier price validity or stock.
-5. `available` with deals is a fresh dated result; `available` with none is a
-   fresh completed empty topic. `no_data` means no usable completed exact-scope
-   collection, while `stale` means the last completed sample is too old.
-   `permission_required` is an authority gap. These latter states exit 3 and
-   contain no deals. Do not ask the assistant to refresh Kroger or restore old
-   history as if it were the latest result.
-6. The default page is 20; `--limit` accepts 1–50. Follow `--cursor` only for
-   the specified bounded task, keeping the same store, topic and page limit.
-   If the server rejects a changed snapshot cursor, restart a bounded read and
-   identify the new snapshot. Do not mix pages or sweep the catalog.
+   Expect `status: preview`, `network: false` and `writes: false`, with no real
+   offer or check-time claim. TEST0001 is synthetic. Real requests use confirmed
+   stores and actual source product/item identities, not copied example IDs.
 
-Keep full descriptions, item/package IDs, source prices and observation dates.
-Savings are calculations from the stored pair. A missing normalized unit basis
-stays unknown; package size cannot establish `$/oz` or `$/lb`. Latest rows do
-not include a prior-history comparison. Confirm current price, conditions and
-availability with the store before buying.
+Machine mode emits one JSON object and never prompts. The clients follow no
+redirects, use no ambient proxy or cookies, retry nothing automatically and save
+no shopping results. Local qualification uses Python 3.14; other runtimes/hosts
+need their own execution checks. Command details are in
+`schemas/command-rules.md`, sections "Current-shopping CLI" and "Stored promotion CLI".
 
-Expect a small explained selection in ordinary shopping language: product and
-package, reported price, supported saving and why it fits your question. The
-assistant distinguishes a good discount from low package spending and tells you
-how many returned deals it selected. Raw IDs and technical fields are not the
-default answer. Rankings cover fresh returned deals only; unnamed or incomplete
-rows are not given invented names or unsupported recommendations.
+### 5. Explicitly request saved deals or dated history
 
-### 7. Check a price and estimate requested quantities
+Current shopping is the ordinary grocery route. To use collected data instead,
+ask explicitly, for example: "Use saved observations for our chosen store and
+show fresh collected milk deals," or "What past prices were recorded for this
+package?" A stored-data failure never silently changes to current shopping.
 
-The tool also reads regular-only prices and estimates selected quantities using
-actual stored item prices. Neither operation calls Kroger, changes a cart or saves
-a customer basket.
+For stored work the assistant:
 
-1. Read a bounded stored-price page for your accepted store and approved topic:
+1. Reuses the accepted exact store, or reads saved ZIP choices and waits for
+   your exact selection. Saved choices carry dates and limited coverage; stale,
+   missing and fresh-empty directories have different meanings.
+2. Discovers readable completed topic labels when latest deals, stored prices
+   or quantity estimates need them. An exact collected `topic` differs from a
+   live grocery search term. Only relevant fresh topics support recommendations;
+   missing/private/legacy labels are not guessed.
+3. Uses `promotions.py latest` for qualifying collected deals, `prices` for
+   collected package prices, or `estimate` for requested stored-price quantities.
+   Regular-only prices are price facts, not promotions. A fresh completed topic
+   can correctly contain no deals. `no_data`, `stale` and `permission_required`
+   are separate data/authority gaps, not proof the store has no promotions.
+4. Uses separate `search`/`retrieve` commands for requested dated observations.
+   It preserves exact item/package, currency, observation dates and incomplete
+   coverage. An old price is not today's offer or proof of an all-time low.
+5. Preserves snapshot age/threshold, partial amounts, missing measure basis and
+   currency qualifications. Uniform unknown currency allows only an unqualified
+   numeric sum; mixed currencies have no combined total. Complete means line
+   arithmetic coverage, never a guaranteed checkout cost.
 
-   ```text
-   python scripts/promotions.py prices --store TEST0001 --topic milk --data-use-approved --json --no-input
-   ```
+Stored history starts empty until separate permitted operator collection exists.
+Neither shopper searches nor these clients populate it. Stale/missing data is
+returned to the operator; the assistant does not refresh it, invent older deals
+or ask you to use the web app.
 
-   Replace the synthetic store/topic and supply your actual `--base-url`. Use
-   `--summary-only` instead if you need fixed status/counts without source rows.
-   Choose the intended product/package from actual returned records; known exact
-   `--product-id`/`--item-id` can narrow the price read. Regular-only is a price
-   fact, not a promotion. Unavailable/stale prices remain gaps.
-2. Specify the selected product's actual IDs/topic and your desired whole-unit
-   quantity. Preview safely using synthetic names:
+### 6. Recover while keeping the conversation intact
 
-   ```text
-   python scripts/promotions.py estimate --store TEST0001 --item milk PRODUCT_ID ITEM_ID 2 --summary-only --dry-run --json --no-input
-   ```
+The assistant reports the fixed failure, what was actually checked and the
+smallest resolving action. It preserves your requested groceries and any valid
+store choice for a later resumed read.
 
-   Replace every synthetic name with the accepted returned identity and supply
-   the actual app URL. `--item` is followed by topic, product ID, item ID and
-   quantity, in that order. Quote text containing spaces in your shell. Repeat
-   `--item` for up to 10 distinct product/item pairs. Quantities are whole numbers
-   1–99; the request is at most 4 KB. The tool never accepts your own price values.
-3. Remove `--dry-run` to read a real estimate. Once actual recipient permission
-   is established, replace `--summary-only` with `--data-use-approved` to return
-   line costs and totals. The service rechecks fresh source records and permission.
-4. Read each named package, requested quantity, line amount, collection date and
-   unresolved reason. Weight/unknown-quantity, missing, stale or unavailable lines
-   have no supported amount. A partial subtotal excludes unresolved lines.
-5. Check the currency and context qualifications next to the amount. Uniform
-   unknown currency permits only an explicitly unqualified numerical sum with no
-   currency symbol; mixed currencies have no combined total. Currency is never
-   inferred from store location. A qualified subtotal needs matching source
-   context and no unresolved lines. Tax, fees, coupons, eligibility verification
-   and checkout changes remain excluded. `complete` means all requested lines
-   were calculated; it never means an amount is guaranteed payable at checkout.
+| Result or gap | Meaning and next action |
+|---|---|
+| No host execution or permitted connector | The host needs a supported client capability. The installed skill alone cannot perform lookups. No browser workaround. |
+| `service_configuration_invalid` | Maintainer restores the complete bundled connection, or operator fixes an intentional override. No shopper app-URL request. |
+| Unreachable service, wrong identity or missing route | Operator checks the shared-service destination, version and deployment. No web-app endpoint fallback. |
+| Concrete privacy/use conflict or stored-data permission gap | Resolve that specific issue privately; no blanket provider review for ordinary current facts. Never paste secrets or grants into chat. |
+| Fresh empty result | The bounded query completed with no returned qualifying choices; it is not a service failure. |
+| Missing or stale stored data | Explain exact store/topic/date gap; collection is separate operator work. |
+| Wrong store, malformed response or incompatible version | Discard the result and report the compatibility problem; do not guess prices. |
+| Rate limit or busy response | Respect its delay. The client does not retry or switch modes automatically. |
 
-Ask the assistant to explain a budget fit or alternatives only using actual
-compatible returned products and supported quantities. Expect a plain-language
-qualified estimate, not an invented total. Compare prices with history only when
-item/package, currency and basis match. `evaluatedAt` records estimate check time;
-source observation dates still say when its prices were collected.
-
-### 8. Search dated history or retrieve one observation
-
-Use this separate route when you actually want earlier retained observations,
-not as an automatic substitute for missing/stale latest data.
-
-1. Run a bounded history search with your accepted store and actual app URL:
-
-   ```text
-   python scripts/promotions.py search --store TEST0001 --term milk --summary-only --json --no-input
-   ```
-
-   Replace TEST0001 and supply `--base-url`. Here `--term` is an optional
-   literal description filter, distinct from latest `--topic`. Product/item
-   IDs and `--from`/`--to` UTC times can narrow the scope. Use `--help`.
-2. To return records after the actual permission check, replace
-   `--summary-only` with `--data-use-approved`. Pages default to 20, maximum
-   50; a matching `--cursor` keeps the same query and limits.
-3. Retrieve a selected observation using its returned ID:
-
-   ```text
-   python scripts/promotions.py retrieve --store TEST0001 --observation-id 1 --data-use-approved --json --no-input
-   ```
-
-   Replace both synthetic IDs and provide your actual base URL. Permission and
-   retention are checked again. `not_found` exits 3 and does not prove the
-   promotion never occurred.
-4. Read source, observation date, currency, item/package and qualification.
-   Regular-only/unqualified observations are not verified promotions; past
-   prices are not current checkout offers or proof of all-time lows.
-
-History begins empty unless the operator has separately collected approved data.
-Neither this tool nor human shopper searches populate it. Failed collection,
-pending permission and empty retained history remain different results.
-
-### 9. Recover without exposing private settings
-
-Available data, complete/partial estimates and previews exit 0. A partial or
-unqualified estimate still needs its stated limits. Exit 1 means a request/format failure, 2 means invalid inputs and 3 means a
-permission/data/availability gap. Follow the fixed recovery, verify the actual
-URL and respect request limits. A rejected cursor can require a new bounded
-snapshot read; unavailable or stale data goes to the operator. Never post raw
-errors, credentials, grants or private records in support requests.
-
-Human app/self-hosting instructions are available even when agent transport or
-permission is missing. They do not authorize the agent to run live searches,
-collection, cart changes or source inquiries.
+Exit 0 covers bounded available/empty results, complete/partial estimates and
+previews. Exit 1 means request/format failure, 2 invalid input, and 3 a stated
+permission/data/capability gap. Partial estimates retain their qualifications.
+Keep raw responses, addresses, accounts, tokens and private agreements out of
+public support reports. No recovery path asks you to open, install or use the
+web app, obtain supplier credentials or set up a database.
 
 ## Key Concepts
 
-- **Skill installation:** making the whole folder available through a host's
-  supported mechanism; it does not deploy a service or grant source rights.
-- **Latest result:** a completed dated store/topic sample within an operator
-  freshness threshold; it is not a live quote.
-- **History result:** a retained dated observation with limited coverage.
-- **Operational candidate:** authored instructions and bounded tool checks;
-  model behavior and actual installation availability need separate evidence.
+- **Companion:** independent conversational client of the shared microservice.
+- **Service connection:** bundled public destination with optional operator
+  override; not a supplier credential, deployment receipt or permission grant.
+- **Latest stored result:** a completed dated store/topic sample within the
+  operator's freshness threshold; not a live checkout quote.
+- **History result:** retained observations with dates and limited past coverage.
 
 ## Decision Criteria
 
-| Need | Use |
-|---|---|
-| Assistant reads latest collected deals | Stored latest route with accepted store/topic. |
-| Assistant examines past observations | Separate history search/retrieve route. |
-| Check current item prices or requested quantities | Current-shopping product/recheck/estimate route; source-backed arithmetic, unknown currency and partial lines preserved. |
-| Explicitly use saved prices/quantities | Stored prices and source-backed estimate route; preserve freshness/qualifications/partial amounts. |
-| Find current nearby stores | Current ZIP lookup, bounded returned choices and exact person choice before products. |
-| Explicitly choose saved stores/collected topics | Stored ZIP snapshot, exact person choice and completed-topic discovery. |
-| Shop directly in the browser | Separate human page and collected human guide. |
-| Run your own app/service | Collected self-hosting/private-service manuals. |
-| Missing source authority or client | Setup/status explanation and human instructions without raw model exposure. |
+Use current service searches for ordinary grocery/deal intent; use the explicit
+stored routes for saved prices or history. Ask only for material shopping facts
+or genuinely unresolved authority. An absent capability yields an exact gap,
+never a shopper web-app task or a fabricated result.
 
 ## Constraints & Limits
 
-No universal assistant-host import, platform, public deployment, live account
-entitlement or supplier-data right is established by this guide. Copying the
-skill installs no connector and permits no catalog forwarding. The plugin-root MIT
-LICENSE covers original project material; supplier data rights are separate.
+Host discovery, cross-platform execution, live deployment and source rights each
+need actual evidence. Optional upstream human/self-hosting manuals remain raw
+reference material for maintainers, not companion shopper instructions. The
+companion never uses the web app or directs a shopper there.
 
 ## Common Patterns
 
-Use the requested mode's status when access is uncertain. Reuse a valid accepted
-store and current authority, plus topic for stored prices. Read only the
-requested bounded current or saved scope; finish with source dates, relevant
-freshness, coverage and remaining gaps. No failure silently changes modes.
+Grocery intent → reuse service/authority/store context → ask only missing ZIP or
+exact choice → call bounded service searches → match packages → estimate only
+requested quantities → explain useful picks, dates, coverage and remaining gaps.

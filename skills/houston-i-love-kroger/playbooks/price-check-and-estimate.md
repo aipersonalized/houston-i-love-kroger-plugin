@@ -22,12 +22,13 @@ for exact request/response fields. Before reporting, read
 
 ## Step 1: Accept the installation, store, scope and requested task
 
-Reuse a valid actual app URL, complete accepted store ID, known approved
+Reuse the bundled shared-service connection, complete accepted store ID, known approved
 collection topic(s) and source/recipient authority. When store/topic is missing,
 read and follow `playbooks/choose-store-and-topic.md` in full, using stored ZIP
 choices, the person's exact store choice and completed-topic discovery. Never
 obtain these through live source searches. An absent or stale stored collection
-is an operator/data gap rather than a mandatory human web-app handoff.
+is an operator/data gap. Never use the web app or ask the shopper to use it,
+whether the stored data is usable or absent.
 
 Establish whether the person wants a known item/package price, a quantity
 estimate, a budget comparison or alternatives. Accept supplied category/brand/
@@ -39,7 +40,7 @@ permission to query Kroger or invent a calculation.
 ## Step 2: Check actual stored prices and item/package identity
 
 Run `python scripts/promotions.py prices --store STORE_ID --topic TOPIC
---base-url BASE_URL --data-use-approved --json --no-input` from the skill folder,
+--data-use-approved --json --no-input` from the skill folder,
 replacing named values with accepted inputs. Optional `--product-id` and
 `--item-id` narrow to known exact IDs. Otherwise inspect only the requested
 bounded page, default 20 and maximum 50. An exact known product/item can narrow
@@ -62,7 +63,7 @@ An unnamed/incomplete product is insufficient evidence for a useful pick.
 ## Step 3: Estimate requested quantities through supported arithmetic
 
 Run `python scripts/promotions.py estimate --store STORE_ID --item TOPIC
-PRODUCT_ID ITEM_ID QUANTITY --base-url BASE_URL --data-use-approved --json
+PRODUCT_ID ITEM_ID QUANTITY --data-use-approved --json
 --no-input`, replacing all named values with accepted inputs. Repeat `--item`
 for 1–10 unique product/item pairs, each with whole quantity 1–99; request size
 is at most 4 KB. Use `--dry-run` to validate without network or writes.

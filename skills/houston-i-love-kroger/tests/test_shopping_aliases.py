@@ -41,6 +41,7 @@ def synthetic_app(payload, wire_size=None):
             requests.append((self.path, json.loads(self.rfile.read(int(self.headers['Content-Length'])))))
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
+            self.send_header('X-Houston-Service', 'houston-i-love-kroger-shopping')
             self.send_header('Content-Length', str(len(encoded)))
             self.end_headers()
             self.wfile.write(encoded)
@@ -66,7 +67,7 @@ def run_cli(base, summary=False, operation='products'):
     selection = {'products': ['--term', 'apples'], 'product': ['--product-id', PID],
                  'estimate': ['--item', PID, IID, '2']}[operation]
     return subprocess.run([sys.executable, '-B', str(SCRIPT), operation, '--store', STORE,
-                           *selection, '--base-url', base, '--data-use-approved', '--json',
+                           *selection, '--base-url', base, '--json',
                            '--no-input', *(['--summary-only'] if summary else [])],
                           capture_output=True, text=True, timeout=15, env=environment)
 

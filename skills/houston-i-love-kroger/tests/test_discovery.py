@@ -3,12 +3,15 @@ import copy
 import importlib.util
 from pathlib import Path
 import unittest
+import sys
 from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts' / 'promotions.py'
+sys.path.insert(0, str(SCRIPT.parent))
 SPEC = importlib.util.spec_from_file_location('discovery_cli', SCRIPT)
 CLI = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CLI)
+sys.path.pop(0)
 
 
 def snapshot(stale=False):

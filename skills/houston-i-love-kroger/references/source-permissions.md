@@ -1,61 +1,72 @@
-# Match source permission to the actual data recipients
+# Use source data for the requested shopping task
 
 ## Detailed Content
 
-Before a live or stored-data read, establish what this installation and workflow permit.
-API availability, public documentation, customer consent and a policy JSON file
-are different from a supplier's applicable grant. Reuse a valid earlier review;
-do not repeatedly ask for the same authorization.
+Distinguish ordinary current display from retained datasets, private records and
+customer activity. The [Public API acceptable-use policy](https://developer.kroger.com/documentation/public/getting-started/acceptable-use)
+permits faithful product and store display with relevant field filtering. Under
+the [Terms](https://developer.kroger.com/terms), applicable additional API terms
+control a conflict. This supports the companion's bounded same-shopper current
+display on a contextual reading; it is not a general reuse or API-resale grant.
+API availability, customer consent and policy files do not expand that scope.
+
+Read the bundled [shared-service privacy and use disclosure](user-guide.md#shared-service-privacy-and-use)
+for the default operator's data flow, hosting-log limits and support boundary.
+No web-app visit is required. A different service operator must provide an
+accurate policy for its own installation; this disclosure is not a source grant.
 
 For the source questions, read
 `research/official_docs/pages/KROGER_PERMISSION_REQUEST.md` in full. The request document is not itself a permission grant. For history's implemented default gate,
 read `research/official_docs/pages/HISTORY.md` section "1. Understand the source requirement".
 
-The app makes no built-in request to an external AI service. The companion calls
-only our app API. Explicit live-shopping calls can make the server query Kroger;
-stored mode reads only the database service and never refreshes it.
+The shared service makes no built-in AI request. The companion calls only its
+public API; current calls can query Kroger, while stored reads never refresh it.
+Neither mode uses the web app or sends the shopper there, including on failure.
+
+For ordinary current shopping:
+
+1. Use the person's grocery request and permitted ZIP/store inputs for that
+   task. Return faithful product/package facts, prices and store business
+   names/addresses in the conversation. These business facts are not automatically
+   the person's private address, account, profile or behavioral history.
+2. No separate supplier approval, provider-specific review or local model is
+   required solely because an assistant participates. Unknown general provider
+   settings alone do not force summary mode. `shopping.py` returns validated
+   current facts by default; `--summary-only` is an optional diagnostic choice.
+   Its accepted `--data-use-approved` flag is optional compatibility syntax,
+   not a review token or permission grant.
+3. Preserve actual access, source facts, request bounds and user privacy. Stop a
+   concrete incompatible use: protected-value exposure, retained catalog copies,
+   customer-search/location tracking or storage, or unauthorized secondary use.
+   Resolve only the facts that affect that issue; do not assume incompatibility
+   from a provider's name or demand private agreements in chat.
+
+The AUP's customer-search/frequent-view and customer-location restrictions are
+distinct from its product/store display permission. Terms section 5e still
+limits permanent copies, caches and specified redistribution absent an applicable
+basis. The examined public texts prescribe no named-provider review procedure
+or express model-training rule. Training or independent reuse can nevertheless
+involve restricted copies, datasets or customer activity; ordinary display does
+not authorize those uses. A known incompatible processing path remains a real
+issue, not an exception created by this guide.
+
 Stored directory collection/display/agent access and product-history access are
-separate source purposes. Check the actual requested operation's grant and
-result; a product-history permission gap does not reject an independently
-permitted stored ZIP directory. A directory grant does not grant price access.
-Its HTTP tools can nevertheless send source records to the tool operator, agent
-host, model provider, logs or retained conversation. Determine that actual path
-before the first catalog request. A trusted local agent and a remote model are
-not automatically the same recipient. This is a fact-dependent check, not a
-universal prohibition on agents.
+separate purposes requiring actual retained-data rights. Check the requested
+operation's grant and result. A product-history gap does not reject an independently
+permitted stored ZIP directory, and a directory grant does not grant price access.
+`promotions.py` requires `--data-use-approved` for full stored records as an
+implementation safeguard acknowledging the applicable retained-data scope. That
+flag neither creates rights nor bypasses server policy; it is not a
+supplier-mandated bespoke provider review. Reuse valid scope evidence, including
+any actual recipient/field/retention limits, without exposing private agreements.
 
-For bounded same-shopper shopping, the operator/person checks the chosen
-agent/provider's actual settings or agreement before full records are returned:
-
-1. Identify the tools, model services and logs receiving ZIP/search/product data.
-2. Check their retention and secondary-use controls: no independent reuse, model
-   training, persistent catalog/search logs or onward disclosure outside this
-   person's actual task. A provider's name alone does not establish those facts.
-   Use current documented settings/agreement or a supported private review;
-   do not ask for private terms in chat.
-3. If the actual path fits source terms and user privacy, reuse that established
-   result for unchanged scope. Full-mode `--data-use-approved` acknowledges the
-   existing review; it grants no permission.
-4. If these facts remain unknown, use fixed `--summary-only` for an authorized
-   bounded diagnostic and explain the source-record output gap. Do not expose
-   records first and redact them afterward.
-
-Ordinary current browsing is independent of systematic database/history
-permission. No blanket Partner requirement or cloud-agent ban follows. Actual
-assigned access, permitted purpose and recipient behavior govern the operation.
-History's permission gap does not itself block current browsing; current access
-does not authorize collection or retention.
-
-Accept a current, bounded permission result from the operator's appropriate
-review or supported private adapter. It identifies the allowed source/purposes,
-recipients, fields, processing/retention limits and validity; it need not reveal
-agreements, private correspondence or account identifiers to the model. The
-user's applicable privacy rules also govern store selection and returned results.
-
-If the selected tool exposes raw responses to a disallowed recipient, choose an
-already available permitted local adapter or provide human-use guidance. Do not
-read raw data first and then try to redact it. Missing adapter capability is a
-specific blocker, not evidence that every agent workflow is forbidden.
+Apply the person's protected-value rules independently. Any provider may receive
+public facts and permitted task results where those rules allow them. A tool
+that exposes protected private inputs or source-private records is unsuitable:
+use an available permitted adapter with a supported output boundary, or explain
+that exact capability gap. Do not expose private records first and redact them
+afterward. Preserve the requested groceries and valid store context; no web-app
+handoff follows. Ordinary current access does not authorize collection/history.
 
 ## Key Concepts
 
@@ -69,10 +80,10 @@ specific blocker, not evidence that every agent workflow is forbidden.
 
 | Known condition | Permitted next step | Limit |
 |---|---|---|
-| No source-record processing permission established | Fixed status/setup or human-use instructions | No record call that exposes data to this agent. |
-| Reviewed permission covers this local agent only | Use the permitted local path | Do not forward its payload to a remote provider. |
-| Reviewed permission covers actual model/tool recipients | Perform the requested bounded live or stored read | Honor fields, retention and purpose restrictions. |
-| Permission is expired, revoked or outside scope | Return that dependency | A prior successful response does not restore rights. |
+| Ordinary bounded current shopping under applicable display terms | Return validated current business facts in the conversation without an approval flag | Preserve source facts, user privacy and bounded purpose; no independent reuse grant. |
+| Concrete incompatible processing or protected output | Stop the affected path and resolve that specific issue | Optional diagnostics cannot authorize a prohibited path or replace useful shopping choices. |
+| Actual stored grant covers the requested operation and recipients | Use full stored mode with its client acknowledgement | Honor the grant's fields, purpose, retention and validity; the flag grants none. |
+| Stored rights are missing, expired, revoked or outside scope | Return the exact source dependency; fixed diagnosis when permitted | A prior response or current-display permission does not create retained-data rights. |
 | Only synthetic fixture data is used | Clearly labeled deterministic development checks | Never call it live shopping evidence. |
 
 ## Constraints & Limits
@@ -87,7 +98,8 @@ not supply that authority or implement the collector.
 
 ## Common Patterns
 
-When recipient controls are unknown, explain: "I can check fixed status and help
-with the app. Before source records reach this assistant, check its actual
-retention and secondary-use controls for this shopping task." When scope is
-already established, proceed within it without another confirmation loop.
+An ordinary grocery request proceeds to bounded current service calls and useful
+choices. A known customer-activity logger, permanent response archive or private
+record exposure requires its own concrete resolution. A stored-history denial
+remains a separate source/data gap. Reuse unchanged accepted scope, ask only for
+material missing shopping facts, and never redirect the shopper to the web app.

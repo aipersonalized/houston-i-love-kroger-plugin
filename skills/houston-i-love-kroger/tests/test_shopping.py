@@ -82,6 +82,7 @@ def stores():
 
 def status():
     return {'ok': True, 'apiVersion': 1, 'configured': True, 'environment': 'production',
+            'service': {'name': 'houston-i-love-kroger-shopping', 'apiVersion': 1},
             'dataSource': 'synthetic-fixture', 'capabilities': {'products': True, 'basket': True,
             'cart': False, 'promotionService': False}, 'history': {'status': 'permission_required'},
             'promotionService': {'status': 'unavailable'}}
@@ -147,17 +148,23 @@ class ShoppingTests(unittest.TestCase):
                 CLI.base_url(bad)
             self.assertNotIn('secret', str(caught.exception))
 
-    def test_gate_and_preview_perform_no_network(self):
+    def test_preview_performs_no_network_or_value_output(self):
         with patch.object(CLI, 'request', side_effect=AssertionError('network forbidden')):
-            with self.assertRaises(CLI.ToolError) as caught:
-                CLI.run(self.args('products', '--store', STORE, '--term', 'whole milk'))
             value, code = CLI.run(self.args('products', '--store', STORE, '--term', 'whole milk', '--dry-run'))
-        self.assertEqual(caught.exception.exit_code, 3)
         self.assertEqual(code, 0)
         self.assertEqual(value['network'], False)
         self.assertNotIn('checkedAt', value)
         self.assertNotIn(STORE, json.dumps(value))
         self.assertNotIn('whole milk', json.dumps(value))
+
+    def test_optional_compatibility_acknowledgement_does_not_change_current_output(self):
+        payload = search()
+        with patch.object(CLI, 'request', return_value=payload) as request:
+            plain = CLI.run(self.args('products', '--store', STORE, '--term', 'whole milk'))
+            acknowledged = CLI.run(self.args('products', '--store', STORE, '--term', 'whole milk', '--data-use-approved'))
+        self.assertEqual(plain, (payload, 0))
+        self.assertEqual(acknowledged, plain)
+        self.assertEqual(request.call_count, 2)
 
     def test_all_success_and_empty_responses(self):
         for operation in ('products', 'deals', 'product'):
@@ -320,6 +327,8 @@ class ShoppingTests(unittest.TestCase):
     def test_summaries_expose_no_rows_identifiers_prices_or_zip(self):
         cases = [('stores', ['--zip', '00000'], stores()),
                  ('products', ['--store', STORE, '--term', 'whole milk'], search()),
+                 ('deals', ['--store', STORE, '--term', 'whole milk'], search('deals')),
+                 ('product', ['--store', STORE, '--product-id', PID], search('product')),
                  ('estimate', ['--store', STORE, '--item', PID, IID, '2'], estimate())]
         for operation, fields, value in cases:
             result, code = CLI.result_for(self.args(operation, *fields, '--summary-only'), value)
@@ -335,6 +344,17 @@ class ShoppingTests(unittest.TestCase):
         value['configured'] = False
         self.assertEqual(CLI.result_for(self.args('status'), value)[1], 3)
 
+    def test_web_app_or_ambiguous_service_status_is_not_a_shared_service(self):
+        for change in (lambda value: value.pop('service'),
+                       lambda value: value['service'].update(apiVersion=True),
+                       lambda value: value['service'].update(name='web-app'),
+                       lambda value: value['capabilities'].update(cart=True)):
+            value = status()
+            change(value)
+            with self.assertRaises(CLI.ToolError) as caught:
+                CLI.result_for(self.args('status'), value)
+            self.assertEqual(caught.exception.code, 'invalid_response')
+
     def test_errors_are_clean_json_in_machine_mode_including_parse_failures(self):
         for fields, expected in [(['products', '--store', STORE, '--term', 'milk', '--dry-run', '--json', '--no-input'], 0),
                                  (['product', '--store', STORE, '--product-id', 'secret', '--json'], 2),
@@ -349,7 +369,7 @@ class ShoppingTests(unittest.TestCase):
 
 
 class NativeHttpTests(unittest.TestCase):
-    def serve(self, response, status_code=200, content_type='application/json', location=None):
+    def serve(self, response, status_code=200, content_type='application/json', location=None, service_header=True):
         requests = []
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self):
@@ -362,6 +382,8 @@ class NativeHttpTests(unittest.TestCase):
             def respond(self):
                 self.send_response(status_code)
                 self.send_header('Content-Type', content_type)
+                if service_header:
+                    self.send_header('X-Houston-Service', 'houston-i-love-kroger-shopping')
                 if location:
                     self.send_header('Location', location)
                 self.end_headers()
@@ -373,7 +395,7 @@ class NativeHttpTests(unittest.TestCase):
         self.addCleanup(server.server_close); self.addCleanup(lambda: thread.join(timeout=2)); self.addCleanup(server.shutdown)
         return f'http://127.0.0.1:{server.server_address[1]}/app/', requests
 
-    def test_every_route_and_body_through_actual_subprocess(self):
+    def test_default_full_current_facts_without_approval_flag_through_actual_subprocess(self):
         cases = [('status', [], status(), 'GET', None), ('stores', ['--zip', '00001'], stores(), 'POST', {'zipCode': '00001'}),
                  ('products', ['--store', STORE, '--term', 'whole milk'], search(), 'POST', {'locationId': STORE, 'term': 'whole milk', 'includeAll': True}),
                  ('deals', ['--store', STORE, '--term', 'whole milk'], search('deals'), 'POST', {'locationId': STORE, 'term': 'whole milk'}),
@@ -384,14 +406,67 @@ class NativeHttpTests(unittest.TestCase):
             with self.subTest(operation=operation):
                 base, requests = self.serve(payload)
                 completed = subprocess.run([sys.executable, '-B', str(SCRIPT), operation, *fields,
-                    '--base-url', base, '--data-use-approved', '--json', '--no-input'], capture_output=True, text=True, timeout=10,
+                    '--base-url', base, '--json', '--no-input'], capture_output=True, text=True, timeout=10,
                     env={**os.environ, 'HTTP_PROXY': 'http://127.0.0.1:1', 'HTTPS_PROXY': 'http://127.0.0.1:1'})
                 self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
-                self.assertEqual(json.loads(completed.stdout)['dataSource'], 'synthetic-fixture')
+                self.assertEqual(completed.stderr, '')
+                result = json.loads(completed.stdout)
+                self.assertEqual(result['dataSource'], 'synthetic-fixture')
+                if operation == 'status':
+                    self.assertTrue(result['configured'])
+                    self.assertEqual(result['history']['status'], 'permission_required')
+                else:
+                    self.assertEqual(result, payload)
                 self.assertEqual(len(requests), 1)
                 self.assertEqual(requests[0][:3], (method, '/app/' + CLI.PATHS[operation], body))
                 self.assertNotIn('Cookie', requests[0][3]); self.assertNotIn('Authorization', requests[0][3])
                 self.assertNotIn('?', requests[0][1])
+
+    def test_optional_summary_strips_current_facts_through_actual_subprocess(self):
+        cases = [('stores', ['--zip', '00001'], stores()),
+                 ('products', ['--store', STORE, '--term', 'whole milk'], search()),
+                 ('deals', ['--store', STORE, '--term', 'whole milk'], search('deals')),
+                 ('product', ['--store', STORE, '--product-id', PID], search('product')),
+                 ('estimate', ['--store', STORE, '--item', PID, IID, '2'], estimate())]
+        for operation, fields, payload in cases:
+            with self.subTest(operation=operation):
+                base, requests = self.serve(payload)
+                completed = subprocess.run([sys.executable, '-B', str(SCRIPT), operation, *fields,
+                    '--base-url', base, '--summary-only', '--json', '--no-input'],
+                    capture_output=True, text=True, timeout=10)
+                self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+                result = json.loads(completed.stdout)
+                self.assertEqual(result['status'], 'complete' if operation == 'estimate' else 'available')
+                for forbidden in (STORE, PID, 'Synthetic store', 'Synthetic whole milk', 'zipCode',
+                                  'whole milk', 'lineTotalCents', 'reportedSubtotalCents'):
+                    self.assertNotIn(forbidden, completed.stdout)
+                self.assertEqual(len(requests), 1)
+
+    def test_default_current_output_still_rejects_failures_and_protected_fields(self):
+        private = search()
+        private['products'][0]['source']['privateToken'] = 'synthetic-private-marker'
+        wrong_scope = search()
+        wrong_scope['scope']['locationId'] = 'WRONG001'
+        cases = [(private, 200, True, 1, 'invalid_response'),
+                 (wrong_scope, 200, True, 1, 'invalid_response'),
+                 (b'{"ok":true,"private":"synthetic-private-marker"}', 503, True, 3, None),
+                 (b'{"ok":true,"apiVersion":1,"apiVersion":1}', 200, True, 1, None),
+                 (search(), 200, False, 1, None)]
+        for payload, status_code, service_header, expected_exit, expected_error in cases:
+            with self.subTest(status=status_code, header=service_header, error=expected_error):
+                base, requests = self.serve(payload, status_code, service_header=service_header)
+                completed = subprocess.run([sys.executable, '-B', str(SCRIPT), 'products',
+                    '--store', STORE, '--term', 'whole milk', '--base-url', base, '--json', '--no-input'],
+                    capture_output=True, text=True, timeout=10)
+                self.assertEqual(completed.returncode, expected_exit, completed.stdout + completed.stderr)
+                self.assertEqual(completed.stderr, '')
+                result = json.loads(completed.stdout)
+                self.assertFalse(result['ok'])
+                if expected_error:
+                    self.assertEqual(result['error']['code'], expected_error)
+                for forbidden in ('synthetic-private-marker', STORE, 'whole milk', 'Traceback'):
+                    self.assertNotIn(forbidden, completed.stdout)
+                self.assertEqual(len(requests), 1)
 
     def test_redirect_raw_errors_and_malformed_json_never_escape(self):
         for response, status_code, content_type in [(b'{"ok":true,"private":"secret"}', 503, 'application/json'),

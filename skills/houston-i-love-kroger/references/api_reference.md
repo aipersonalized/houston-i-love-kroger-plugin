@@ -1,17 +1,20 @@
-# App shopping operations and comparison meanings
+# Shared-service shopping operations and comparison meanings
 
 ## Detailed Content
 
 ### Scope and effects
 
-The companion uses this project's version-1 app API. Explicit current shopping
+The independent companion consumes the shared shopping microservice's version-1
+API. The web app is another independent consumer; the companion never uses it
+or asks a shopper to use, open or install it. Current shopping
 and stored-data reads are separate modes. Latest stored deals and historical search/retrieval are
 database reads. They do not contact Kroger, initialize a database, collect data,
 alter grants or change a cart. No supplier credentials, private database mount,
 SQL, model SDK or particular AI provider is required.
 
-The human web app and explicit agent live-shopping procedure share the app's
-current store/product API. Optional Cart remains outside the companion.
+The service owns supplier reads, stored-data access and supported arithmetic;
+the agent owns grocery intent, package matching and the useful shopping answer.
+The public service API has no Cart, sign-in or checkout workflow.
 Missing/stale/empty service data never authorizes a live fallback. Stored ZIP
 snapshots supply dated store choices; the person confirms the exact location.
 Completed-topic discovery supplies actual readable collection labels. Collection,
@@ -25,12 +28,37 @@ They own exact DTO fields, limits, pagination and errors. Source identities and
 hashes live in `research/official_docs/manifest.json`; a live response still
 requires store/topic/version validation.
 
+### Service connection and identity
+
+The tools automatically load the skill's `config/connection.json`, whose
+`apiVersion: 1` and `serviceBaseUrl` select the public service base
+`https://aipersonalized.io/api/houston-i-love-kroger/`. This is the configured
+destination, not evidence that a live deployment has passed qualification.
+Shoppers need no app URL or local app. Only an operator selecting another
+compatible service uses `HOUSTON_SERVICE_URL` or `--base-url`; the explicit flag
+wins, then the environment setting, then bundled configuration. Missing or
+malformed configuration produces `service_configuration_invalid` before network.
+
+Append the unchanged `api/v1/` operation suffixes below to the selected base.
+The clients verify `X-Houston-Service: houston-i-love-kroger-shopping` on public
+responses. `GET api/v1/status` additionally returns
+`service: {name: "houston-i-love-kroger-shopping", apiVersion: 1}`. A web-app
+endpoint or an HTTP-200 JSON response without the required identity is not a
+valid service connection. Status checks source configuration/environment and
+capabilities; it neither performs a supplier search nor proves stored data exists.
+
+The public contract retains `{ok: true, apiVersion: 1, ...}` result wrappers.
+The private storage service's authenticated `/v1/` routes have different
+meanings and wrappers; they are not companion endpoints. Never supply its
+token, supplier credentials or a database path. No client error falls back to
+the web app, direct supplier access or a guessed local address.
+
 ### Explicit current shopping
 
 Read `schemas/command-rules.md` section "Current-shopping CLI" in full before
 `shopping.py`. Its status/stores/products/deals/product/estimate commands map to
 `api/v1/status`, `stores/search`, `products/search`, `deals/search`,
-`products/retrieve` and `basket/estimate`. Bind every request to the actual app;
+`products/retrieve` and `basket/estimate`. Bind every request to the selected service;
 searches use JSON bodies, no query, credential, cookie or redirect.
 
 Live ZIP lookup returns at most ten locations within ten miles. The person
@@ -41,14 +69,19 @@ the exact thirteen-digit source product ID and complete store ID; it retains
 all returned variants/evidence and never chooses a replacement.
 
 Live estimate accepts only selected source product/item IDs and quantities,
-1–10 distinct pairs, whole 1–99. The app rechecks each unique product and
+1–10 distinct pairs, whole 1–99. The service rechecks each unique product and
 calculates at a final common evaluation time. Each line retains its own read
 time. Complete/partial describe arithmetic coverage. Unknown currency, price
 basis and purchase conditions keep the qualified subtotal null; unresolved
-lines are not zero. Source amounts, per-unit estimates and app calculations
+lines are not zero. Source amounts, per-unit estimates and service calculations
 stay separate. Neither shopping nor estimates start collection, persist a
 shopping list or call Cart. Current browsing does not require a history grant;
 optional dated comparisons still have their own rights/retention checks.
+Validated current facts are returned by default. `--summary-only` is optional;
+the current client's accepted `--data-use-approved` flag is compatibility syntax,
+not a prerequisite. Ordinary same-shopper display needs no separate provider
+review. Concrete private-data, customer-activity, storage and reuse conflicts
+remain subject to `references/source-permissions.md`.
 
 The authoritative exact DTOs are in the collected API manual, sections "Recheck
 an exact product" and "Estimate selected products from fresh checks". The
@@ -57,7 +90,7 @@ candidate before delivery; an older mirror does not qualify new behavior.
 
 ### Stored request sequence
 
-Use the actual app URL ending in `/` and append these relative paths. All POST
+Use the selected shared-service base ending in `/` and append these relative paths. All POST
 inputs use JSON with `Content-Type: application/json` and
 `Accept: application/json`. Never put search/store values in URL queries.
 Do not follow redirects or send source records to unapproved recipients.
@@ -178,7 +211,7 @@ reads stay unknown.
 
 | Condition | Action | Reason |
 |---|---|---|
-| Stored mode missing store/topic | Run stored ZIP/topic discovery and accept the person's exact choice | No live fallback, first-result assumption or unnecessary human-web handoff. |
+| Stored mode missing store/topic | Run stored ZIP/topic discovery and accept the person's exact choice | No live fallback, first-result assumption or shopper web-app task. |
 | Fresh empty latest result | Report zero qualifying deals in the completed scope | Older rows must not reappear. |
 | No completed collection or stale snapshot | Report the distinct data/freshness gap | A reader does not initiate collection. |
 | Rejected cursor or changed snapshot | Restart a bounded requested read and disclose its new snapshot | Do not mix pages from collections. |
@@ -186,8 +219,10 @@ reads stay unknown.
 
 ## Constraints & Limits
 
-Source rights and actual recipients are checked before records enter model
-context; a CLI acknowledgement does not grant rights. Service authentication
+Ordinary current display uses the basis above without a blanket provider review.
+Stored records follow the actual retained-data grant, including any recipient
+limits; resolve concrete missing scope and reuse valid evidence. A CLI
+acknowledgement does not grant rights. Service authentication
 protects private storage but does not itself authorize data forwarding. Keep
 synthetic data labelled. Do not harvest a catalog, compare competing retailers,
 expose private configuration or claim current checkout availability.
@@ -197,4 +232,5 @@ expose private configuration or claim current checkout availability.
 Latest: permitted service status if needed → accepted exact store/topic → one
 bounded latest page → dated snapshot result and stop. History: accepted exact
 store/query → bounded retained search → selected record if requested → dated
-result and stop. Setup-only and human instructions stop at their requested scope.
+result and stop. Setup-only stops at the companion's client/service result;
+neither a missing client nor unavailable data authorizes a web-app handoff.

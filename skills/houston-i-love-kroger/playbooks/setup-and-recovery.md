@@ -1,113 +1,129 @@
-# Establish the requested app connection or explain its blocker
+# Check the companion client and shared service connection
 
-Guide installation or recovery without exposing credentials, reading a private
-database or treating configured source access as populated/fresh service data.
+Establish whether the companion can complete the requested grocery task, or
+name the exact host, service, permission or data gap. Keep the shopper's task in
+the conversation. Never use the web app or ask the shopper to open, install or
+use it, including when no client or usable data exists.
 
 ## Continued From
 
-`SKILL.md` setup route or a connection failure from a current or stored procedure.
-Setup-only requests finish here; a working connection does not authorize a read.
+`SKILL.md` companion installation/recovery route or a failed current/stored
+request. Setup-only requests finish here. Reuse valid installation, permitted
+task scope and confirmed store rather than restarting setup for each grocery list.
 
 ## Resources
 
-Before installation guidance, read `references/user-guide.md` in full. Before
-service status, read `schemas/command-rules.md` sections "Current-shopping CLI" and "Stored promotion CLI"
-and `references/api_reference.md` in full. For source-recipient questions, read
-`references/source-permissions.md` in full. For human app installation, read
-`research/official_docs/pages/SELF_HOSTING.md` and
-`research/official_docs/pages/PROMOTION_SERVICE.md` in full.
+For plugin installation, read `references/user-guide.md` in full. Before service
+status, read `references/api_reference.md` and `schemas/command-rules.md` sections
+"Service connection", "Current-shopping CLI" and "Stored promotion CLI" in full.
+For a concrete source-use or privacy issue, read `references/source-permissions.md`
+in full. Upstream human/self-hosting manuals are not shopper recovery procedures.
 
-## Step 1: Bound the requested help
+## Step 1: Identify the requested result and available client
 
-Identify skill installation, human app installation, current-shopping setup,
-stored-service diagnosis or an interrupted read. Use the actual app URL; a proposed public address
-does not establish a deployment. Check whether the assistant host can read the
-complete skill and run Python or an equivalent permitted app client.
+Distinguish plugin installation, connection diagnosis, an interrupted shopping
+request and unsupported Cart/collection work. Check whether the assistant host
+can execute Python 3.12+ or use an equivalent permitted service client. An
+installed skill folder alone does not install a remote connector.
 
-If no suitable client exists, provide human installation instructions and name
-the capability gap. Do not switch the agent to browser live searches.
+If the client capability is absent, explain which host execution/connector
+capability is missing. Supply companion installation steps when requested and
+stop dependent reads. Do not invent completed setup, direct supplier access or
+a browser workaround. Cart, sign-in, checkout and collection are unsupported
+companion operations; explain that limit without redirecting to the web app.
 
-## Step 2: Guide installation or inspect the selected mode's status
+## Step 2: Use the bundled connection and inspect the requested mode
 
-Follow the user guide's ordered skill/tool instructions. For human self-hosting,
-use the selected manuals; Node/npm and private service/database configuration
-belong to the application operator, not the assistant provider.
+The tools automatically load `config/connection.json` inside the skill folder.
+It selects `https://aipersonalized.io/api/houston-i-love-kroger/` as the public
+service base. That configured destination does not establish that its live
+deployment is available or qualified. Do not ask the shopper to supply an app
+URL or run a local app. Only an operator choosing another compatible service
+uses `HOUSTON_SERVICE_URL` or `--base-url`; the explicit flag takes precedence.
 
-The companion needs only the app URL. Do not request a Kroger key or private
-service token, inspect `.env`, mount SQLite, post secrets in command arguments,
-or alter source registrations/grants. Credentials and grants are configured
-privately by the operator.
+A missing/malformed connection reports `service_configuration_invalid` before
+network access. Restore the complete plugin or return the configuration defect
+to its maintainer. Do not guess a localhost address. Never request Kroger keys,
+private service tokens, `.env` contents, a database mount or private grants.
 
-For current shopping run `python scripts/shopping.py status --base-url BASE_URL
---json --no-input`. Check configured/environment/capability facts. Configured
-does not establish working source credentials; certification/synthetic data is
-not live shopping evidence. Missing stored service/history rights do not block
-this separately permitted current-shopping path. Do not require database setup
-to repair a current lookup. A missing new route needs the correct complete app
-URL or an operator app update.
+For current shopping, run `python scripts/shopping.py status --json --no-input`
+from the skill folder. The client checks the `X-Houston-Service` response header;
+status must identify `service: {name: "houston-i-love-kroger-shopping", apiVersion: 1}`.
+Wrong/missing identity is a compatibility gap, even when the endpoint returns
+HTTP 200. Check configured/environment/capability facts. Configured does not
+establish working supplier credentials; synthetic/certification data is not a
+real offer. Missing stored-history permission does not block independently
+permitted current shopping and never requires shopper database setup.
+Ordinary current business-fact display needs no separate provider review or
+approval flag; unknown general provider settings alone do not block it. Resolve
+only a concrete protected-data, customer-activity, storage or reuse conflict.
 
-For explicit stored-service setup run `python scripts/promotions.py status
---base-url BASE_URL --json --no-input` from this skill folder, replacing BASE_URL.
-This calls only the stored-service status endpoint. Distinguish connection
-failure, unavailable service, permission required and available. Available
-does not prove the selected store/topic has a completed fresh collection.
-Instructions supplied to a person are not completed setup.
+For an explicitly stored task, run `python scripts/promotions.py status --json
+--no-input`. This checks only stored-service permission/availability, not whether
+the accepted store/topic has a fresh completed collection. Directory rights are
+separate; judge a directory read by that operation's actual result. Instructions
+given to a person are not completed installation or successful service access.
 
-## Step 3: Recover according to the observed failure
+## Step 3: Resolve only the observed dependency
 
 | Condition | Action |
 |---|---|
-| Current app unconfigured/new route absent | Operator checks base URL/app version/private source setup; no history database is required for current browsing. |
-| Current store or requested package missing | Return to `playbooks/live-shopping.md`; use bounded current choices and person confirmation, or reuse accepted IDs. |
-| Unreachable installation or unavailable service | Operator checks actual app address and private service connection; never expose configuration. |
-| `permission_required` | Operator resolves that operation's source/recipient authority privately. No dependent record read or live fallback. |
-| Stored mode missing store or topic | Enter `playbooks/choose-store-and-topic.md`; use saved ZIP choices/completed topics, then accept the person's exact choice. |
-| `no_data` / `no_completed_collection` | Explain that the exact store/topic has no usable completed collection; collection is separate operator work. |
-| `snapshot_not_readable` | Explain original/current permission or retention prevents using that completed sample; no older fallback. |
-| `stale` | Report snapshot age/threshold and operator dependency; this reader cannot refresh it. |
-| Fresh `available` with zero deals | Report a completed empty bounded topic; do not treat it as a connection defect. |
-| Invalid input or rejected cursor | Correct the field once; restart only the requested bounded read for a changed snapshot. |
-| Busy/quota response | Respect its delay; do not restart services or loop to bypass limits. |
-| Unsupported/oversized/malformed response | Discard it and ask the operator to check API compatibility. |
+| Missing Python or permitted client | Explain the host execution/connector gap; use the companion installation guide when requested. No browser fallback. |
+| `service_configuration_invalid` | Maintainer restores the bundled connection; an operator checks an intentional service override. No shopper app-URL question. |
+| Unreachable service or wrong/missing service identity | Report the connection/compatibility gap; operator checks the actual service route/version. Do not use the web app endpoint. |
+| Current source unconfigured or a documented route absent | Operator repairs shared-service configuration/version. No history database or app installation is assigned to the shopper. |
+| Missing current store or package | Return to `playbooks/live-shopping.md`; ask only the unresolved shopping input or reuse accepted IDs. |
+| Stored `permission_required` or `recipient_permission_required` | Return the actual retained-data dependency to the operator. The stored client's acknowledgement gate is implementation policy, not a supplier requirement for provider review; it grants no rights or server bypass. No mode change. |
+| Concrete current privacy/use conflict | Stop only the affected path and identify the incompatible processing or protected output; no blanket provider-review prerequisite or fabricated permission. |
+| Stored mode missing store/topic | Use `playbooks/choose-store-and-topic.md`; stored choices, exact person choice and completed topics. |
+| `no_data` / `no_completed_collection` | Explain the exact missing completed scope; collection is separate operator work. |
+| `snapshot_not_readable` | Explain permission/retention prevents reading that sample; no older replacement. |
+| `stale` | Report collection age/threshold and operator dependency; this reader cannot refresh it. |
+| Fresh `available` with zero deals | Report the completed empty bounded topic; this is not a connection defect. |
+| Invalid input or rejected cursor | Correct the field once; restart only the requested bounded read when its snapshot changed. |
+| Busy/quota response | Respect its delay; do not loop, switch endpoints or restart services. |
+| Unsupported/oversized/malformed response | Discard it; operator checks service API compatibility. |
 
-A new historical search is a separate requested task, not recovery for stale
-latest data. Do not initialize, replace or populate a database to make a read
-succeed. Preserve unknown outcomes and stop repeated unchanged failures.
-Directory access has its own source permission. A promotion-status permission
-gap blocks its dependent price/history reads, not a separately permitted stored
-directory lookup. Judge directory availability from the directory operation.
+Missing stored data never triggers live shopping, historical substitution or
+collection. Do not initialize/populate a database or repeat unchanged failures.
+A new historical request is a separate task, not repair for stale latest data.
 
-## Step 4: Return readiness and stop or resume
+## Step 4: Return the result and stop or resume the requested read
 
-State the checks actually run, current service state and smallest resolving
-action. For setup-only, stop. For an already requested interrupted read, return
-the installation, accepted transport/recipients, current store/query/selections
-or stored store/topic/history
-scope and unresolved dependency to its read procedure for acceptance.
+State checks actually run, the observed service/client state and the smallest
+resolving action. For setup-only, stop. For an interrupted authorized shopping
+task, return accepted task scope, confirmed store, requested groceries and
+selected items, or the stored topic/history scope, to that read procedure.
+Resume only after its actual dependency is resolved. A fixed status diagnosis
+does not establish that a source lookup or agent task succeeded.
 
 ## Gotchas
 
-- A usable app or source credential does not prove stored collection exists.
-- The skill requires no AI-provider account, key, model SDK or provider metadata.
-- Original project materials use the root MIT LICENSE; copies and instructions
-  do not establish a public release, source grant or completed installation.
+- The companion and web app are independent consumers of one shared service.
+- The public service connection contains no supplier or private storage token.
+- Service status, source access, stored collection and source/recipient rights
+  are distinct facts; valid existing authority does not need repeated approval.
+- Plugin installation needs no AI-provider account or model SDK in the core.
 
 ## Checklist
 
-- [ ] The actual installation, client and requested effects are established.
-- [ ] The requested mode's status was checked; history was not a current-shopping prerequisite.
-- [ ] Private credentials, grants and database records remain outside context.
-- [ ] Instructions, connection status and fresh populated data are distinct.
+- [ ] The requested task and host client capability are identified.
+- [ ] The tools use their selected service connection and verify service identity.
+- [ ] Status and actual source/data success are reported separately.
+- [ ] Only genuinely missing inputs or changed authority became questions.
+- [ ] No web-app use, shopper app setup, credentials or private database was required.
 
 ## Recovery from interruption
 
-Inspect current permitted service status before repeating a failed check.
-Preserve operator processes/accounts/data and avoid replaying uncertain setup.
-Resume only the affected check; a read failure never authorizes collection.
+Reuse unchanged accepted setup, store, request and authority. Check only facts
+invalidated by a changed client/service/recipient or failed request. Preserve
+unknown outcomes and stop unchanged retries. No recovery path uses the web app,
+direct supplier access, Cart or source collection.
 
 ## Handoff
 
-Producer: setup procedure. Receiver: caller, or the already requested current or stored
-procedure. Deliver installation identity, actual checks, permitted client and
-recipients, accepted scope and missing dependencies. The receiver verifies those
-facts before use. Stop at the requested setup result or exact blocker.
+Producer: companion setup/recovery. Receiver: caller or the interrupted requested
+current/stored procedure. Deliver actual client/service checks, accepted scope
+and any applicable recipient limits, source/data state and the unresolved dependency. The receiver
+checks these facts before resuming. Stop at the requested setup result or exact
+gap; no browser or app-installation handoff follows.

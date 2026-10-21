@@ -1,5 +1,5 @@
 metadata:
-  scope: "Parallel app API shopping companion with separate stored deals and history"
+  scope: "Independent conversational companion using the shared shopping microservice, with separate stored deals and history"
 SKILL.md:
   _purpose: "Terms that select current shopping, stored reads or setup"
   "Latest collected deals": "Qualifying dated prices from the latest completed exact-store/topic snapshot within the operator freshness policy."
@@ -7,8 +7,8 @@ SKILL.md:
 playbooks:
   _purpose: "Accepted task identity and finish conditions"
   "Accepted store": "The complete eight-character locationId explicitly chosen from current or saved name/address choices, or supplied as an already verified choice."
-  "Current shopping": "An explicit app API workflow for current ZIP choices, requested product searches, exact rechecks and selected-quantity estimates; never an automatic fallback."
-  "Selected live estimate": "Fresh app rechecks of actual selected source product/item IDs, max10 pairs with whole quantities1–99; numeric arithmetic preserves unknown currency and unresolved lines."
+  "Current shopping": "A shared-service workflow inferred from the person's grocery/deal request: current ZIP choices, requested product searches, exact rechecks and requested-quantity estimates; never an automatic fallback."
+  "Selected live estimate": "Fresh service rechecks of actual selected source product/item IDs, max10 pairs with whole quantities1–99; numeric arithmetic preserves unknown currency and unresolved lines."
   "Stored directory": "A dated bounded ZIP search snapshot; reads never call live Locations or start collection."
   "Completed topics": "Readable named collection jobs for the accepted store, with freshness and counts; not private uncollected plans or guessed legacy labels."
   "Collection topic": "The exact operator-approved topic label, distinct from a historical description filter."
@@ -28,6 +28,8 @@ references:
   "Unreported currency": "Missing source currency; no inferred currency symbol or qualified monetary total."
 scripts:
   _purpose: "Current-shopping and stored-read clients plus local public documentation maintenance"
+  "Service connection": "Bundled public serviceBaseUrl and API version, consumed automatically by tools; explicit operator --base-url precedes HOUSTON_SERVICE_URL then bundled config. No shopper app URL or web-app prerequisite."
+  "Service identity": "Required X-Houston-Service value houston-i-love-kroger-shopping, plus matching service name/API version in current status; configuration alone proves no deployment."
   "repo:/": "Logical identifier for the reviewed first-party manual inventory."
   "Source freshness": "Whether documentation snapshot bytes match a supplied current app checkout."
   "Snapshot freshness": "Age of a completed collection under an operator threshold, not a supplier validity guarantee."

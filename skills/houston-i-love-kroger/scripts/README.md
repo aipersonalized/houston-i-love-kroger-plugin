@@ -1,15 +1,15 @@
 # Companion tools
 
-`shopping.py` lets humans and assistants use this app's current-shopping API:
+`shopping.py` lets assistants use the shared microservice's current-shopping API:
 find stores, search requested groceries/promotions, recheck exact products and
 freshly estimate selected quantities. Explicit requests can make the server
 contact Kroger. No Cart, collection, supplier key or model SDK is needed.
 
 `promotions.py` helps humans and assistants find stored store choices and collected
 topics, read deals or dated history, check prices and estimate requested quantities
-from our service through the app. It never contacts
+directly from the shared service. It never contacts
 Kroger, starts collection or needs a database mount or supplier key. The other
-commands maintain bundled documentation and do not query the app.
+commands maintain bundled documentation and do not query a shopping service.
 
 ## Quick Start
 
@@ -26,20 +26,25 @@ For current shopping, run:
 
 ```text
 python scripts/shopping.py --help
-python scripts/shopping.py status --base-url http://localhost:4173/apps/houston-i-love-kroger/ --json --no-input
+python scripts/shopping.py status --json --no-input
 python scripts/shopping.py products --store TEST0001 --term milk --summary-only --dry-run --json --no-input
 python scripts/shopping.py estimate --store TEST0001 --item 0000000000001 00001 2 --summary-only --dry-run --json --no-input
 ```
 
-Replace the status URL with the actual installation. Other IDs are synthetic
+Both clients automatically load `config/connection.json` in the skill folder.
+Operators can override the service with `HOUSTON_SERVICE_URL` or `--base-url`;
+ordinary shoppers do not supply a URL or install a web app. Other IDs are synthetic
 previews: no network or checked price/time. For a real task, use `shopping.py
 stores --zip ZIP`, wait for the person's exact store choice, then `products
 --store STORE --term TERM` or promotion-only `deals`. `product --store STORE
 --product-id PRODUCT_ID` rechecks an actual thirteen-digit returned ID.
 `estimate --store STORE --item PRODUCT_ID ITEM_ID QUANTITY` accepts 1–10 pairs,
-whole quantities 1–99. Add your base URL and output mode: --summary-only, or
---data-use-approved after actual source/recipient rights exist. That flag grants
-none. Follow [the human guide](../references/user-guide.md) for full steps.
+whole quantities 1–99. Validated current facts are returned by default;
+--summary-only selects fixed diagnostics. Ordinary display needs no separate
+provider review or approval flag. --data-use-approved remains an optional
+compatibility acknowledgement and grants no rights. Private data, customer
+activity, storage and reuse have separate limits. Follow
+[the human guide](../references/user-guide.md) for full steps.
 
 Current numeric estimates have unknown currency/purchase context, so they are
 not a verified budget or checkout total. Missing groceries stay visible. Full
@@ -49,13 +54,12 @@ To read stored deals, first check your actual installation:
 
 ```text
 python scripts/promotions.py --help
-python scripts/promotions.py status --base-url http://localhost:4173/apps/houston-i-love-kroger/ --json --no-input
+python scripts/promotions.py status --json --no-input
 ```
 
 The status command can report permission_required with exit 3; that is a
 successful connection with missing product/history authority. Directory permission
-is checked separately by `stores`. Replace the address with your actual
-installation. Preview the starting path using synthetic examples:
+is checked separately by `stores`. Preview the starting path using synthetic examples:
 
 ```text
 python scripts/promotions.py stores --zip 00000 --summary-only --dry-run --json --no-input
@@ -64,13 +68,15 @@ python scripts/promotions.py latest --store TEST0001 --topic milk --summary-only
 ```
 
 Expect preview status with network/writes false. For an actual read, supply the
-actual `--base-url` and use `stores --zip ZIP_CODE` for saved directory choices.
+configured shared service and use `stores --zip ZIP_CODE` for saved directory choices.
 Ask the person which exact name/address they want, then use `topics --store
 STORE_ID` for completed fresh/stale scopes. Replace synthetic TEST0001/milk in
 the deal example with that accepted full store ID and relevant fresh topic.
-These are database reads, never live ZIP lookups. After actual source and
-recipient permission is established, omit --dry-run and use --data-use-approved
-for records, or --summary-only for fixed state/count/freshness facts.
+These are database reads, never live ZIP lookups. After actual retained-data
+rights cover the operation and recipients, omit --dry-run and use
+--data-use-approved for records, or --summary-only for fixed state/count/freshness
+facts. This stored-client safeguard is implementation policy, not a supplier
+requirement for a bespoke provider review.
 
 Latest available can contain fresh deals or a completed empty sample. no_data,
 stale and permission_required are distinct exit-3 gaps with no deals; they never
@@ -81,7 +87,7 @@ For a known package price, use `prices --store STORE_ID --topic TOPIC` and selec
 an actual returned product/item. Estimate requested quantities with
 `estimate --store STORE_ID --item TOPIC PRODUCT_ID ITEM_ID QUANTITY`, repeating
 --item for up to 10 distinct selections and whole quantities 1–99. Supply the
-same app URL and established data-output authority; use --dry-run to preview.
+same service connection and established data-output authority; use --dry-run to preview.
 No caller prices are accepted. Complete/partial estimates preserve actual line
 arithmetic, unresolved lines, currency/context gaps and excluded checkout costs.
 `complete` means calculated line coverage, not a guaranteed checkout total.
@@ -94,7 +100,7 @@ prompts or writes data.
 
 ## What It Does
 
-- Explicitly request bounded current stores/products/promotions through the app,
+- Explicitly request bounded current stores/products/promotions through the shared service,
   recheck exact source IDs and estimate requested quantities without persistence.
 - Read dated ZIP directory choices and completed topic states; the person
   confirms the exact store, and stale/missing data never causes a live lookup.
@@ -110,9 +116,10 @@ prompts or writes data.
 ## Requirements
 
 Python 3.12 or newer, standard library only. Executed here with Python 3.14.
-Keep both shopping.py and promotions.py together for shared transport primitives.
-An equivalent permitted client can use the app contract; the human page and
-companion are parallel interfaces. Documentation collection
+Keep the complete skill folder, including service_connection.py and config.
+An equivalent permitted client can use the shared service contract. The companion
+and web app are independent clients; no shopping path uses the web page or asks
+the person to finish there. Documentation collection
 requires ordinary local files, not linked paths.
 
 If you want to run these optional maintenance commands:

@@ -20,15 +20,17 @@ HTTP fields. Before reporting, read `schemas/output-contract.md` in full.
 
 ## Step 1: Accept the installation and permitted recipients
 
-Use the actual app base URL supplied by the operator, including its final `/`.
-Confirm that source rights and user privacy cover every tool/agent/model
-recipient. Reuse established current authority; `--data-use-approved` records
-that check and cannot grant rights. Do not load raw records into a disallowed
+Use the tools' bundled shared-service connection, including any deliberate
+operator override. The shopper does not provide an app URL or run an app.
+Use the actual retained-data grant's scope, including any recipient limits,
+and user privacy. Reuse established authority; this stored client's required
+`--data-use-approved` acknowledges that scope as implementation policy, not a
+supplier-mandated provider review, and cannot grant rights. Do not load raw records into a disallowed
 channel and redact them afterward.
 
 When connection or permission status is uncertain, run
-`python scripts/promotions.py status --base-url BASE_URL --json --no-input`
-from this skill folder, replacing BASE_URL. This uses only the stored service's
+`python scripts/promotions.py status --json --no-input`
+from this skill folder. This uses only the shared service's stored-data
 status endpoint. A successful `permission_required` response is a missing grant,
 not an empty database. `available` does not establish a completed store/topic
 collection. Setup gaps return to `playbooks/setup-and-recovery.md`.
@@ -38,8 +40,9 @@ collection. Setup gaps return to `playbooks/setup-and-recovery.md`.
 Use the person's accepted complete eight-character store ID, including zeros.
 If store choice or collected scope is missing, read and follow
 `playbooks/choose-store-and-topic.md` in full. Use its stored ZIP choices and
-completed-topic discovery, then accept the person's exact location. No separate
-human web-app visit or live ZIP request is needed when stored data is usable.
+completed-topic discovery, then accept the person's exact location. Never use
+the web app or send the shopper there; absent stored data remains its exact
+operator/data gap. No live ZIP lookup replaces this stored request.
 
 Accept the person's category, budget or brand preferences when supplied. Use
 them to select among known approved topics or filter the returned records;
@@ -56,8 +59,8 @@ operator. The person confirms an ambiguous store/scope. No gap causes live fallb
 ## Step 3: Read one bounded latest-deals page
 
 Run `python scripts/promotions.py latest --store STORE_ID --topic TOPIC
---base-url BASE_URL --data-use-approved --json --no-input`, replacing all named
-values. Default page size is 20, maximum 50. The only request is to this app's
+--data-use-approved --json --no-input`, replacing the named shopping inputs.
+Default page size is 20, maximum 50. The only request is to the shared service's
 stored latest endpoint; it cannot start a collector or fetch live products.
 
 Check that the returned store/topic match the accepted request. Preserve the

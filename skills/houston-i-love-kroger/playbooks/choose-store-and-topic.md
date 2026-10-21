@@ -18,7 +18,8 @@ fields and limits. Before answering, read `schemas/output-contract.md` in full.
 
 ## Step 1: Accept the requested task and permitted installation
 
-Use the actual app base URL and a permitted client. Establish recipient rights
+Use the bundled shared-service connection and a permitted client. Reuse valid
+recipient authority; resolve only genuinely missing or changed rights
 for the requested directory or product data before exposing its records. The
 directory and promotion collections have separate source permissions; a blocked
 promotion-status response does not establish that directory access is blocked.
@@ -31,7 +32,7 @@ Do not ask for credentials, private agreements or database access.
 
 ## Step 2: Offer stored store choices and ask for the exact location
 
-Run `python scripts/promotions.py stores --zip ZIP_CODE --base-url BASE_URL
+Run `python scripts/promotions.py stores --zip ZIP_CODE
 --data-use-approved --json --no-input`, replacing the named values. This reads
 the service's stored ZIP snapshot; it never calls Kroger or starts collection.
 Check the echoed ZIP, snapshot observation/completion dates, age, freshness
@@ -53,8 +54,8 @@ choice can be supplied directly without repeating discovery.
 An `available` empty snapshot means no stores were returned in that saved
 search, not that no Kroger exists nearby. `no_data`, `stale`,
 `permission_required` and `unavailable` are distinct directory/data dependencies.
-Explain the actual state and resolving operator action. Do not send the person
-to the human app as a mandatory prerequisite when usable stored choices exist.
+Explain the actual state and resolving operator action. Never use the web app
+or send the shopper there, even when stored choices are unusable or absent.
 No missing/stale result authorizes a live lookup or collection.
 
 ## Step 3: Discover completed topics for the confirmed store
@@ -62,7 +63,7 @@ No missing/stale result authorizes a live lookup or collection.
 Reuse a still-valid accepted collection scope when it already matches the
 confirmed store and requested task. Otherwise, for current deals, prices or a
 budget/quantity estimate, run
-`python scripts/promotions.py topics --store STORE_ID --base-url BASE_URL
+`python scripts/promotions.py topics --store STORE_ID
 --data-use-approved --json --no-input` with the person's confirmed ID. Check
 the returned store and coverage. This lists completed readable collection
 scopes, not private configured-but-uncollected plans or a complete catalog.

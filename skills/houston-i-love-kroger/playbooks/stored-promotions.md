@@ -6,7 +6,7 @@ does not refresh prices, collect a catalog or change a shopping cart.
 
 ## Continued From
 
-The stored-promotion route in SKILL.md, with the actual app base URL and an
+The stored-promotion route in SKILL.md, with the selected shared-service connection and an
 approved recipient. A verified exact store choice can be reused.
 
 ## Resources
@@ -18,7 +18,8 @@ for the actual HTTP contract. For setup, read `references/user-guide.md`.
 
 ## Step 1: Establish the installation, store and recipient
 
-Use the user's selected installation and exact full eight-character store ID.
+Use the tools' bundled service connection or deliberate operator override and
+the person's exact full eight-character store ID. Do not ask for an app URL.
 If only a ZIP is supplied, read and follow `playbooks/choose-store-and-topic.md`
 in full for stored directory lookup and the person's exact store choice; dated
 history does not require a current topic. Do not guess a store from a ZIP.
@@ -26,16 +27,16 @@ Confirm that the source grant permits this
 recipient, including any model service that receives tool output. Reuse valid
 authority. The CLI's acknowledgement flag is not a new grant.
 
-Run `python scripts/promotions.py status --base-url BASE_URL --json --no-input`
-from the skill folder. Replace BASE_URL with the actual base address ending in
-`/`; never supply credentials or query strings in the address. A successful
+When connection or authority is uncertain, run `python scripts/promotions.py
+status --json --no-input` from the skill folder. Do not repeat this for unchanged
+accepted setup/authority. A successful
 connection reporting permission_required is an authority gap, not an empty
 database. Stop source-record requests while that gap remains.
 
 ## Step 2: Search the bounded approved observations
 
 Use `python scripts/promotions.py search --store STORE_ID --term TERM
---base-url BASE_URL --data-use-approved --json --no-input`, replacing the named
+--data-use-approved --json --no-input`, replacing the named
 values. `--term` is optional. Product/item IDs and UTC observation-date bounds
 are alternatives or additional filters; consult --help for exact flags.
 
@@ -48,7 +49,7 @@ fixed status/counts for diagnostics instead of source records.
 ## Step 3: Retrieve and explain a selected record
 
 For a specific search result, use `python scripts/promotions.py retrieve
---store STORE_ID --observation-id OBSERVATION_ID --base-url BASE_URL
+--store STORE_ID --observation-id OBSERVATION_ID
 --data-use-approved --json --no-input`. The store and observation must match.
 A not_found response does not establish that no promotion ever existed.
 Permission and expiry are checked again on retrieval; previous access is not
@@ -70,6 +71,8 @@ Return the requested matching observations with their dates and limited
 coverage, or the precise permission/not-found/unavailable outcome. Do not save
 or forward responses to a new recipient. This command never initializes a
 database, imports policy, invokes collection or alters supplier permissions.
+Never use the web app or ask the shopper to open, install or use it, including
+for missing history, client failures or source permission gaps.
 
 ## Gotchas
 

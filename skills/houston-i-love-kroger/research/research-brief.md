@@ -1,6 +1,6 @@
 ---
 type: research
-title: "Research: parallel app shopping companion"
+title: "Research: independent companion using the shared shopping service"
 source_manifest: "official_docs/manifest.json"
 source_inventory: "source-inventory.json"
 sources:
@@ -15,16 +15,20 @@ provenance:
   generated_by: agent
   method: "Retained first-party corpus, accepted backend contract, current source inspection and synthetic CLI checks. Exact manual hashes/dates/version remain at source_manifest."
 trust_tier: source
-summary: "Agents use the app API for explicit current shopping or separate stored deals/history, with actual returned facts and explicit scope."
+summary: "Agents infer grocery intent, call the shared microservice and explain returned choices; the independent companion never uses or sends shoppers to the web app."
 ---
-# Parallel app shopping companion research brief
+# Independent shopping companion research brief
 
 ## Task and resolved scope
 
-The user wants the companion to operate in parallel with the human app:
+The user requires independent companion and web-app projects sharing the same
+shopping microservice. The companion must never use the web app or ask a
+shopper to open, install or use it, including on client/service/data failures.
+The agent infers grocery/deal intent from ordinary conversation, calls the
+service itself and reports useful returned choices. It must
 understand requested groceries/quantities/budget/preferences, find current ZIP
 choices, wait for exact store acceptance, search products/promotions, match
-packages and freshly estimate selected quantities. It uses our app API only;
+packages and freshly estimate requested quantities. It uses our shared service API only;
 the server owns source access and arithmetic. The preserved stored mode
 also supports saved ZIP choices and exact store acceptance, completed
 topic discovery, item price checks, requested-quantity costs, budget
@@ -39,7 +43,8 @@ Current commands use `api/v1/status`, `stores/search`, `products/search`,
 `deals/search`, `products/retrieve`, `basket/estimate`. All reads are explicit
 and bounded; a stored failure never enters current shopping automatically.
 Stored commands still use only `api/v1/promotions/status|stores|topics|latest|
-prices|estimate|search|retrieve`. Neither mode directly contacts Kroger, starts
+prices|estimate|search|retrieve`. These suffixes now target the selected service
+base, not the web app. Neither mode directly contacts Kroger, starts
 collection, changes Cart/policy or reads a private database.
 
 ### Current-shopping source contract
@@ -55,9 +60,13 @@ amounts support unqualified numeric multiplication without regular savings.
 
 `shopping.py` implements source/store/term/page/time checks, source/pricing/
 evidence validation and line/subtotal arithmetic. It shares unchanged transport
-primitives with `promotions.py`; both files ship together. Recipient reviews
-check actual retention/training/secondary use/onward disclosure for the bounded
-same-shopper task. Ordinary browsing does not inherit database-history rights
+primitives with `promotions.py`; both files ship together. Ordinary bounded
+same-shopper current display uses the applicable Public API display terms and
+the person's request, without a separate provider review or approval flag.
+Public product/store business facts are distinct from private shopper inputs
+and customer-activity records. Concrete storage, tracking or secondary-use
+conflicts need specific resolution; unknown general provider settings alone do
+not block ordinary display. Browsing does not inherit database-history rights
 as a prerequisite; no blanket Partner or cloud-agent ban follows. Full promotion
 coverage remains unmet. Integration refreshes the selected manuals from the
 accepted joined candidate before final acceptance.
@@ -72,9 +81,10 @@ links that record rather than copying hashes that can drift. Inventory selection
 is owned by `source-inventory.json`.
 
 Mirrored manuals preserve exact source bytes. The plugin's local instructions,
-tools and API reference need no app checkout. Optional links to the upstream
-app's installation and publisher material use public URLs; those targets are not
-automatically bundled, collected or qualified by this mirror. Each manifest
+tools and API reference need no app checkout. The upstream human/self-hosting
+manuals remain raw maintainer references. They are not shopper routes and cannot
+authorize browser/app-installation fallback. External upstream links are not
+automatically collected or qualified by this mirror. Each manifest
 entry retains its original `source` path and `repo:/` URI for provenance.
 
 Working local `fetch_docs.py` and `refresh_docs.py` collect and audit only those
@@ -92,8 +102,12 @@ rights remain separate.
 
 ## Findings that change decisions
 
-1. **The service is the data owner.** The private service owns SQLite, source
-   policy and read-time retention checks. The public app proxies fixed reads.
+1. **The shared service owns shopping operations.** The same headless
+   microservice supplies current store/product searches and estimates plus
+   stored-data operations to independent consumers. Its private storage boundary
+   owns SQLite, source policy and read-time retention checks. The companion
+   consumes only public service routes, not the web-app process or private
+   authenticated storage routes. Integration must verify this exact backend.
    Source credentials/private service tokens and local database paths do not
    belong to the companion. The client has no database mount, SQL or model SDK.
 
@@ -146,11 +160,16 @@ rights remain separate.
    rankings. State selected/returned counts, additional-page availability and
    collection/check time in ordinary language, with one practical next action.
 
-9. **Actual recipients still matter.** Database storage and API access do not
-   authorize forwarding to a tool/agent/model host. Match reviewed source rights
-   and user privacy to actual recipients before exposure. Acknowledging
-   `--data-use-approved` grants nothing. Summary output is fixed status/count/
-   freshness metadata, not source records; it still makes a server read.
+9. **Display, customer activity and retained data differ.** Current facts return
+   by default under the applicable ordinary-display basis. No supplier-mandated
+   provider review or express model-training rule was identified in the examined
+   public text; independent reuse can still involve restricted copies, datasets
+   or customer activity. Protect private values and resolve actual incompatible
+   processing, rather than assuming it from a provider's name. The current
+   acknowledgement flag is optional compatibility syntax. The stored client's
+   required acknowledgement is implementation policy for applicable retained-data
+   rights and grants none. Summary output is fixed status/count/freshness
+   metadata, not useful shopping choices; it still makes a server read.
 
 10. **Costs use actual supported arithmetic.** Stored price reads preserve usable
     regular-only prices separately from promotions and unavailable source facts.
@@ -164,11 +183,22 @@ rights remain separate.
     eligibility verification and checkout changes are excluded. Weight/unknown
     quantity bases remain unresolved rather than being derived from package text.
 
-11. **Setup is distinct from availability.** A usable app, successful service
+11. **Setup is distinct from availability.** A bundled connection, successful service
     status or configured source credentials does not prove that a store/topic
-    collection exists. Missing data remains an operator dependency. Human
-    installation guidance is not executed setup, and a proposed URL is not a
-    deployment.
+    collection exists. Missing data remains an operator dependency. Companion
+    installation guidance is not executed setup, and configured routing is not a
+    deployment. `config/connection.json` inside the skill selects the public base
+    `https://aipersonalized.io/api/houston-i-love-kroger/`; an operator may override
+    it with `HOUSTON_SERVICE_URL` or `--base-url`. Tools consume this configuration
+    and reject missing/malformed values before network. They require the
+    `X-Houston-Service` response header and current status's
+    `service: {name: "houston-i-love-kroger-shopping", apiVersion: 1}` identity.
+    No shopper app URL, local app, supplier key or database setup is required.
+
+12. **Authority is reused when valid.** A normal grocery request does not
+    restart installation or request repeated permission for unchanged recipients.
+    Resolve only genuinely missing or changed source/recipient facts. Missing
+    client execution or authority yields its exact gap, never web-app use.
 
 ## Tool and instruction checks
 
@@ -191,16 +221,21 @@ Static scenarios in `evals/scenarios.json` are authored walkthrough cases, not
 model trials. Qualitative shopping judgment remains agent reasoning, not a
 hardcoded CLI label or price ranking.
 
-The integration owner handles real public→private HTTP/database acceptance,
-human browser evidence, final manual refresh and publication checks. Companion
+The integration owner handles real shared-service HTTP/database acceptance,
+operation without the web app, final manual refresh and publication checks. Companion
 authoring performed no real Kroger call, source collection, protected account
 read, hosted-agent trial or deployment. No model trial was run.
 
 ## Remaining qualification and maintenance
 
 Each installation's source rights, recipient scope, fresh populated collection
-and actual app URL need their own evidence. Cross-platform Python execution and
+and actual shared-service availability need their own evidence. Cross-platform Python execution and
 assistant discovery/import are not universally established by local tests.
+Ordinary current display does not require a bespoke provider review; concrete
+privacy/use conflicts and separate retained-data grants remain the relevant
+authority questions. Synthetic no-approval-flag CLI tests do not establish a real
+agent's human-facing answer. Earlier fictional trials retain their actual
+candidate identity; actual conversation output needs its own authorized evidence.
 Re-read changed contract/source sections and refresh/reconcile affected manuals
 before acceptance. Reuse unaffected valid evidence. The separately owned private
 project record retains final candidate identities, checks and unresolved gates.

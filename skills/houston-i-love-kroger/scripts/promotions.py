@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read latest collected deals or dated history through the project's app API.
+"""Read latest collected deals or dated history through the shared microservice.
 
 No database access, credentials, API collection, files or model SDKs are used.
 The operator's source permission and approved recipient still govern results.
@@ -17,6 +17,7 @@ import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
+from service_connection import ConnectionError, SERVICE_NAME, resolve_service_url
 
 EXIT_OK, EXIT_FAILED, EXIT_INPUT, EXIT_UNAVAILABLE = 0, 1, 2, 3
 MAX_RESPONSE = 1_000_000
@@ -50,7 +51,7 @@ def base_url(value):
             raise ValueError()
         return urllib.parse.urlunsplit((url.scheme, url.netloc, url.path or '/', '', ''))
     except (TypeError, ValueError):
-        invalid('Use an HTTPS app base address ending in /, or HTTP on localhost. Do not include credentials or a query.')
+        invalid('Use an HTTPS shared-service base address ending in /, or HTTP on localhost. Do not include credentials or a query.')
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -72,7 +73,8 @@ def request(base, operation, body=None, timeout=15):
                                  data=None if body is None else json.dumps(body).encode('utf-8'))
     try:
         with opener.open(req, timeout=timeout) as response:
-            if response.status != 200 or response.headers.get_content_type() != 'application/json':
+            if (response.status != 200 or response.headers.get_content_type() != 'application/json' or
+                    response.headers.get('X-Houston-Service') != SERVICE_NAME):
                 raise ValueError()
             raw = response.read(MAX_RESPONSE + 1)
             if len(raw) > MAX_RESPONSE:
@@ -83,20 +85,20 @@ def request(base, operation, body=None, timeout=15):
             return value
     except urllib.error.HTTPError as error:
         error.close()
-        messages = {400: 'The app rejected the search fields.', 401: 'The installation requires authorization.',
+        messages = {400: 'The service rejected the search fields.', 401: 'The installation requires authorization.',
                     403: 'The installation or its hosting provider refused this request.',
                     404: 'This installation does not provide the requested operation.',
                     413: 'The search request exceeds the installation limit.',
                     429: 'The installation has limited requests.',
                     502: 'The promotion service could not be reached.',
                     503: 'The promotion service is unavailable.'}
-        raise ToolError('http_error', messages.get(error.code, 'The app could not complete this request.'),
-                        'Check the app address and status. Respect any limit before trying again.') from None
+        raise ToolError('http_error', messages.get(error.code, 'The service could not complete this request.'),
+                        'Report the service status to its operator. Respect any limit before trying again.') from None
     except (urllib.error.URLError, TimeoutError, OSError):
-        raise ToolError('connection_failed', 'The app could not be reached.',
+        raise ToolError('connection_failed', 'The shared service could not be reached.',
                         'Check the address and connection, then run status. No automatic retry was made.') from None
     except (ValueError, UnicodeError):
-        raise ToolError('invalid_response', 'The app returned an unsupported response.',
+        raise ToolError('invalid_response', 'The shared service returned an unsupported response.',
                         'Use an installation that supports the documented API version.') from None
 
 
@@ -654,7 +656,7 @@ def result_for(args, payload):
         # Emit only fixed capability facts, never arbitrary target configuration.
         status = payload.get('status')
         if status not in {'permission_required', 'available', 'unavailable'}:
-            raise ToolError('invalid_response', 'The app did not provide a supported history status.', 'Check the API version with the operator.')
+            raise ToolError('invalid_response', 'The service did not provide a supported history status.', 'Check the API version with the operator.')
         return {'ok': True, 'apiVersion': 1, 'status': status}, EXIT_OK if status == 'available' else EXIT_UNAVAILABLE
     try:
         allowed = {'ok', 'apiVersion', 'status', 'reason', 'message', 'locationId',
@@ -694,9 +696,14 @@ def result_for(args, payload):
                         'Discard the result and ask the installation operator to check its API.') from None
 
 
+class Parser(argparse.ArgumentParser):
+    def error(self, _message):
+        invalid('Missing, unknown or invalid command arguments. Values are not echoed; run --help.')
+
+
 def parser():
-    p = argparse.ArgumentParser(allow_abbrev=False, description='Read stored deals/prices, estimate requested quantities or inspect dated history. No live Kroger requests, collection or purchases.',
-        epilog='Examples: promotions.py status --base-url http://localhost:4173/apps/houston-i-love-kroger/ --json\n'
+    p = Parser(allow_abbrev=False, description='Read stored deals/prices, estimate requested quantities or inspect dated history through the shared service. No web app, live Kroger requests, collection or purchases.',
+        epilog='Examples: promotions.py status --json\n'
         'promotions.py stores --zip 00000 --summary-only --dry-run --json\n'
         'promotions.py topics --store TEST0001 --summary-only --dry-run --json\n'
         'promotions.py latest --store TEST0001 --topic milk --summary-only --json\n'
@@ -704,9 +711,9 @@ def parser():
         'promotions.py estimate --store TEST0001 --item milk PRODUCT_ID ITEM_ID 2 --summary-only --dry-run --json\n'
         'promotions.py search --store TEST0001 --term milk --summary-only --json\n'
         'promotions.py retrieve --store TEST0001 --observation-id 1 --data-use-approved --json\n'
-        'Set HOUSTON_APP_URL or --base-url. Use --data-use-approved only after actual source/recipient permission is established; this flag grants no rights. Exit 0: available/complete/partial/preview; 1: request failure; 2: input; 3: permission required/unavailable/no data/stale/not found. Complete means arithmetic line coverage, never checkout total.')
+        'Uses the bundled shared-service connection. Operators can override it with HOUSTON_SERVICE_URL or --base-url. This stored client requires --data-use-approved to acknowledge applicable retained-data rights; it is an implementation safeguard, not a supplier-mandated provider review. The flag grants no rights or server-policy bypass. Exit 0: available/complete/partial/preview; 1: request failure; 2: input; 3: permission required/unavailable/no data/stale/not found. Complete means arithmetic line coverage, never checkout total.')
     p.add_argument('operation', choices=['status', 'stores', 'topics', 'latest', 'prices', 'estimate', 'search', 'retrieve'])
-    p.add_argument('--base-url', default=os.environ.get('HOUSTON_APP_URL', 'http://localhost:4173/apps/houston-i-love-kroger/'))
+    p.add_argument('--base-url', help='Operator override for the shared-service base URL ending in /. Never a web-app URL.')
     p.add_argument('--store'); p.add_argument('--topic', help='Exact approved operator collection topic for latest/prices; no live search.')
     p.add_argument('--zip', dest='zip_code', help='Five-digit ZIP for stored directory discovery only; no live Kroger request.')
     p.add_argument('--item', dest='basket_items', nargs=4, action='append', metavar=('TOPIC', 'PRODUCT_ID', 'ITEM_ID', 'QUANTITY'),
@@ -716,7 +723,7 @@ def parser():
     p.add_argument('--limit', type=int, default=20); p.add_argument('--cursor')
     p.add_argument('--timeout', type=float, default=15)
     p.add_argument('--summary-only', action='store_true', help='Return fixed status/counts without source records or store identifiers.')
-    p.add_argument('--data-use-approved', action='store_true', help='Acknowledge actual source and recipient permission for returning records; not a permission grant.')
+    p.add_argument('--data-use-approved', action='store_true', help='Stored-client safeguard: acknowledge applicable retained-data rights; no supplier-mandated provider review or permission grant.')
     p.add_argument('--json', action='store_true'); p.add_argument('--no-input', action='store_true')
     p.add_argument('--no-color', action='store_true'); p.add_argument('-q', '--quiet', action='store_true')
     p.add_argument('-v', '--verbose', action='store_true'); p.add_argument('-n', '--dry-run', action='store_true')
@@ -724,15 +731,19 @@ def parser():
 
 
 def run(args):
-    base = base_url(args.base_url); body = build_body(args)
+    try:
+        selected = resolve_service_url(args.base_url)
+    except ConnectionError as error:
+        raise ToolError('service_configuration_invalid', str(error), 'Restore the complete plugin or contact its service operator; do not open or install the web app.', EXIT_UNAVAILABLE) from None
+    base = base_url(selected); body = build_body(args)
     if not math.isfinite(args.timeout) or not 1 <= args.timeout <= 35:
         invalid('--timeout must be between 1 and 35 seconds.')
     if args.dry_run:
         return {'ok': True, 'status': 'preview', 'operation': args.operation,
                 'requestFields': sorted(body or {}), 'network': False, 'writes': False}, EXIT_OK
     if args.operation != 'status' and not args.summary_only and not args.data_use_approved:
-        raise ToolError('recipient_permission_required', 'Returning source records needs actual source and recipient permission.',
-                        'Use --summary-only for a bounded diagnostic, or establish permission before --data-use-approved.', EXIT_UNAVAILABLE)
+        raise ToolError('recipient_permission_required', 'This stored client requires acknowledgement of applicable retained-data rights.',
+                        'Use --summary-only for diagnostics, or acknowledge established retained-data rights with --data-use-approved; this client safeguard grants none.', EXIT_UNAVAILABLE)
     result, code = result_for(args, request(base, args.operation, body, args.timeout))
     if args.operation in {'latest', 'prices'}:
         result = {**result, 'checkedAt': dt.datetime.now(dt.timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')}
@@ -740,12 +751,13 @@ def run(args):
 
 
 def main(argv=None):
-    args = parser().parse_args(argv)
-    human = sys.stdout.isatty() and not (args.json or args.no_input or args.quiet)
-    color = human and not args.no_color and not os.environ.get('NO_COLOR')
-    if human:
-        print('Houston I Love Kroger — stored stores, prices, deals and estimates\nRead dated collections; this tool never contacts Kroger or starts collection.')
+    human = False
     try:
+        args = parser().parse_args(argv)
+        human = sys.stdout.isatty() and not (args.json or args.no_input or args.quiet)
+        color = human and not args.no_color and not os.environ.get('NO_COLOR')
+        if human:
+            print('Houston I Love Kroger — stored stores, prices, deals and estimates\nRead dated collections; this tool never contacts Kroger or starts collection.', file=sys.stderr)
         result, code = run(args)
     except ToolError as error:
         result, code = {'ok': False, 'error': {'code': error.code, 'message': str(error), 'recovery': error.recovery}}, error.exit_code
@@ -755,8 +767,9 @@ def main(argv=None):
         result, code = {'ok': False, 'error': {'code': 'failed', 'message': 'The tool could not complete this request.', 'recovery': 'Run --help and check the installation. No automatic retry was made.'}}, EXIT_FAILED
     if human:
         label = 'Available' if code == 0 else 'Needs attention'
-        print((('\033[32m' if code == 0 else '\033[33m' if code == EXIT_UNAVAILABLE else '\033[31m') if color else '') + label + ('\033[0m' if color else ''))
+        print((('\033[32m' if code == 0 else '\033[33m' if code == EXIT_UNAVAILABLE else '\033[31m') if color else '') + label + ('\033[0m' if color else ''), file=sys.stderr)
     print(json.dumps(result, ensure_ascii=True, allow_nan=False))
+    sys.stdout.flush()
     return code
 
 

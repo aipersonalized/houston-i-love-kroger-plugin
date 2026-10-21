@@ -12,6 +12,9 @@ deal?", explain which fresh returned products have a supported discount and
 which have a low reported whole-package price. These are separate judgments.
 Match supplied category, budget and brand preferences; do not invent preferences,
 compare incompatible packages or infer health quality from a discount.
+Infer the grocery/deal intent from ordinary conversation and use the shared
+service tools; do not assign commands or web-app steps to the shopper. Never
+use the web app or ask them to open, install or use it, including on failure.
 
 A compact answer normally has product name/full source description, package
 when known, reported promotional price/currency, supported savings and one short
@@ -89,10 +92,14 @@ collected low as an all-time low. No stored response means no stored-price claim
 For setup, state actual installation identity, requested help, checks executed,
 service status, permission/client/data gaps and next action. Human instructions
 are instructions rather than executed installations, registrations or reads.
+The bundled service connection supplies the destination. Configuration or
+client failures are host/maintainer dependencies, not a request for a shopper
+app URL, supplier key, database setup or web-app workaround. Reuse unchanged
+valid setup/authority rather than repeating it for each grocery request.
 
 For store choice, show usable returned names/addresses first and ask which exact
-location the person wants. Do not choose a first/closest result or make the
-human web app a mandatory handoff when stored data is usable. For topics, explain
+location the person wants. Do not choose a first/closest result or send the
+shopper to the web app under any result state. For topics, explain
 which requested categories have fresh completed data and which remain gaps;
 operator plan labels and raw DTOs are not the default shopping answer.
 
@@ -108,5 +115,6 @@ last completed snapshot. Missing unit basis remains unknown.
 Report fixed HTTP/tool code and useful recovery without raw server errors or
 private configuration. Stop dependent work on missing identity, authority or
 compatibility. No stored failure triggers a live search or collector. Deliberate
-current reads use only the app; no direct supplier call occurs. These are
+current reads use only the shared microservice; no direct supplier call occurs.
+Check the required service response identity and discard mismatches. These are
 manual report checks rather than an invented automated output validator.

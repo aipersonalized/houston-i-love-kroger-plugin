@@ -8,18 +8,43 @@ folder. The collected API manual owns the exact server DTOs.
 
 ## Inputs and outputs
 
+### Service connection
+
+The tools load `config/connection.json` inside this complete skill folder. Its
+`apiVersion: 1` and `serviceBaseUrl` select the public shared-service base
+`https://aipersonalized.io/api/houston-i-love-kroger/`. Configured routing is not
+evidence of deployed availability or live qualification. Ordinary shoppers
+need no URL, local app, supplier key or database setup.
+
+Only an operator intentionally selecting another compatible service overrides
+the connection: explicit `--base-url` first, then `HOUSTON_SERVICE_URL`, then
+bundled configuration. Missing or
+malformed configuration returns `service_configuration_invalid` before network
+access; restore the complete plugin or return the defect to its maintainer.
+Never guess localhost or fall back to the web app. Keep the base's final `/`;
+HTTPS is required except loopback HTTP. Refuse credentials/query/fragment URLs.
+
+All requests use fixed `api/v1/` suffixes at that service base. Public responses
+must carry `X-Houston-Service: houston-i-love-kroger-shopping`.
+`shopping.py status` also validates the response's
+`service: {name: "houston-i-love-kroger-shopping", apiVersion: 1}` discriminator.
+Missing/wrong identity is an unsupported connection, even with HTTP 200 JSON.
+The public service exposes no Cart or browser session. Its private storage
+token and authenticated `/v1/` routes are not companion inputs or endpoints.
+
 ### Current-shopping CLI
 
 `scripts/shopping.py` is a Python 3.12+ standard-library client for deliberate
-current-shopping requests through this app. Keep sibling `promotions.py` in the
+current-shopping requests through the shared microservice. Keep sibling `promotions.py` in the
 same scripts folder for shared transport primitives. Its independent stored-only
 behavior remains unchanged. No model SDK, browser, supplier key or database access.
 
-From the complete skill folder, synthetic safe previews are:
+From the complete skill folder, inspect help, check real service status, or use
+the synthetic `--dry-run` previews below. Only status makes a network request:
 
 ```text
 python scripts/shopping.py --help
-python scripts/shopping.py status --base-url http://localhost:4173/apps/houston-i-love-kroger/ --json --no-input
+python scripts/shopping.py status --json --no-input
 python scripts/shopping.py stores --zip 00000 --summary-only --dry-run --json --no-input
 python scripts/shopping.py products --store TEST0001 --term milk --summary-only --dry-run --json --no-input
 python scripts/shopping.py deals --store TEST0001 --term coffee --sort savings --summary-only --dry-run --json --no-input
@@ -27,8 +52,8 @@ python scripts/shopping.py product --store TEST0001 --product-id 0000000000001 -
 python scripts/shopping.py estimate --store TEST0001 --item 0000000000001 00001 2 --summary-only --dry-run --json --no-input
 ```
 
-All example ZIPs and IDs are synthetic. Actual searches use the real app URL
-(`--base-url` or `HOUSTON_APP_URL`), confirmed store and returned source IDs.
+All example ZIPs and IDs are synthetic. Actual searches use the selected shared
+service connection, confirmed store and returned source IDs.
 `status` GETs `api/v1/status` without a body. It checks configuration/environment
 and implemented capabilities, not valid source access. Stores/products/deals/
 product/estimate POST to `api/v1/stores/search`, `api/v1/products/search`,
@@ -57,9 +82,13 @@ No resolved lines give null totals, never fake zero. Complete means arithmetic
 coverage; missing currency/basis/purchase conditions prevent verified monetary
 budget fit. Per-unit estimates preserve precision and unknown measure basis.
 
-Full records require actual rights and `--data-use-approved`, which acknowledges
-an existing recipient/source review and grants none. Read
-`references/source-permissions.md` in full for practical recipient controls.
+Ordinary current output returns validated full facts by default under the
+applicable Public API display terms and the person's requested purpose. No
+approval flag or separate provider review is required solely because an assistant
+participates; unknown general provider settings alone do not force summaries.
+`--data-use-approved` remains accepted as an optional compatibility acknowledgement
+and grants no rights. Read `references/source-permissions.md` in full for
+concrete private-data, customer-activity, retained-copy and reuse limits.
 `--summary-only` projects fixed status/counts, source label, retrieval/evaluation
 times and nonexhaustive/continuation state, with no rows/IDs/names/prices/totals/
 ZIP/term. It still makes the selected server read and creates no rights.
@@ -74,8 +103,8 @@ raw body/exception, URL or supplied values.
 `--json`, `--no-input`, pipes and `--quiet` emit one JSON object including input
 errors, with no prompt/banner/color. `--help` prints usage, exit 0. Human TTY
 mode gives orientation/labeled status on stderr; NO_COLOR/`--no-color` suppress
-color. This stateless run-and-exit reader has direct commands; the web app is
-the visual human flow. `--dry-run` validates without network, writes, input
+color. This stateless run-and-exit reader has direct commands for the agent to
+execute. It never uses or sends the shopper to the web app. `--dry-run` validates without network, writes, input
 values or a false checked time. `--verbose` keeps errors bounded.
 
 Exits: 0 bounded success/fresh empty/complete/partial/preview; 1 request/format/
@@ -92,18 +121,19 @@ neither source rights, live access, cross-platform support nor model performance
 ### Stored promotion CLI
 
 `scripts/promotions.py` is a portable Python 3.12+ standard-library HTTP client.
-It has been exercised with Python 3.14. It uses only this project's stored-read
-service through the public app proxy. It never reads `.env`, supplier credentials
+It has been exercised with Python 3.14. It uses only the shared microservice's
+public stored-read operations. It never reads `.env`, supplier credentials
 or database files, calls live store/product searches or starts collection.
-Use actual source and recipient permission before returning
-records to an agent/model service. `--data-use-approved` acknowledges that prior
-check; it cannot grant rights or bypass server policy.
+Use actual retained-data rights for the requested operation and recipients before
+returning stored records. This client's `--data-use-approved` prerequisite is an
+implementation safeguard acknowledging that scope, not a supplier-mandated
+provider review. It cannot grant rights or bypass server policy.
 
 From this skill folder:
 
 ```text
 python scripts/promotions.py --help
-python scripts/promotions.py status --base-url http://localhost:4173/apps/houston-i-love-kroger/ --json --no-input
+python scripts/promotions.py status --json --no-input
 python scripts/promotions.py stores --zip 00000 --summary-only --dry-run --json --no-input
 python scripts/promotions.py topics --store TEST0001 --summary-only --dry-run --json --no-input
 python scripts/promotions.py latest --store TEST0001 --topic milk --summary-only --dry-run --json --no-input
@@ -114,8 +144,9 @@ python scripts/promotions.py retrieve --store TEST0001 --observation-id 1 --data
 ```
 
 The 00000/TEST0001/1 values are synthetic examples, not a real selected ZIP, store or record.
-Set `HOUSTON_APP_URL` or supply `--base-url` ending in `/`. HTTPS is required
-except for localhost/loopback HTTP. Credentials, address queries, fragments and
+Use the bundled service connection; only an operator uses `HOUSTON_SERVICE_URL`
+or `--base-url`. HTTPS is required except for localhost/loopback HTTP.
+Credentials, address queries, fragments and
 redirects are refused. Requests declare a client User-Agent, do not inherit a
 proxy/cookie/credential configuration, use bounded timeouts and read at most 1 MB.
 
@@ -162,7 +193,7 @@ not current offers or a latest-deals fallback.
 
 `--summary-only` emits fixed status/counts without source rows or store IDs.
 For stores/topics it also omits ZIP, store names/addresses, topic labels and
-source metadata; use established recipient permission and `--data-use-approved`
+source metadata; use the applicable retained-data grant and `--data-use-approved`
 for the full choices needed to confirm an exact store and collected scope.
 For latest/prices it also projects snapshot dates, age/threshold, fixed attempt
 status/times and recognized reason; it omits topic, snapshot/observation IDs,
@@ -171,7 +202,9 @@ Estimate summary gives evaluatedAt and resolved/unresolved line counts, with no
 source rows, selections, prices or totals. Full estimates use backend evaluatedAt;
 latest/prices adds tool checkedAt after a validated read, distinct from source
 observation time and snapshot age. Dry-run contains no check/observation claim.
-The default record mode requires actual permission and `--data-use-approved`.
+Full stored-record mode requires actual retained-data rights and this client's
+`--data-use-approved` acknowledgement. That implementation policy is independent
+of ordinary current display, which requires no approval flag.
 
 Latest validates exact store/topic, completed snapshot dates/age, fixed attempt
 status/time, page, coverage and full qualifying deal schema. `available` with an

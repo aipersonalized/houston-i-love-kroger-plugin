@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Explicit current-shopping reads through this app, without credentials or Cart.
+"""Explicit current-shopping reads through the shared microservice.
 
-The app may contact its configured source for stores, products and estimates.
+The service may contact its configured source for stores, products and estimates.
 Stored history remains a separate promotions.py operation; nothing falls back.
 """
 from __future__ import annotations
@@ -21,6 +21,7 @@ import urllib.request
 # Reuse unchanged transport policy primitives; the stored client's routes and
 # behavior remain independent. Install this complete scripts folder together.
 from promotions import ToolError, NoRedirect, base_url as stored_base_url
+from service_connection import ConnectionError, SERVICE_NAME, resolve_service_url
 
 EXIT_OK, EXIT_FAILED, EXIT_INPUT, EXIT_UNAVAILABLE = 0, 1, 2, 3
 MAX_RESPONSE, SAFE_INTEGER = 8_000_000, 9_007_199_254_740_991
@@ -54,7 +55,7 @@ def clean_text(value, maximum, minimum=1):
 
 def base_url(value):
     if not clean_text(value, 2048) or value != value.strip():
-        invalid('Use the actual app base address without surrounding spaces or control characters.')
+        invalid('Use a shared-service base address without surrounding spaces or control characters.')
     return stored_base_url(value)
 
 
@@ -158,6 +159,7 @@ def request(base, operation, body=None, timeout=15):
     try:
         with opener.open(req, timeout=timeout) as response:
             require(response.status == 200 and response.headers.get_content_type() == 'application/json')
+            require(response.headers.get('X-Houston-Service') == SERVICE_NAME)
             raw = response.read(MAX_RESPONSE + 1)
             require(len(raw) <= MAX_RESPONSE)
             value = json.loads(raw, parse_constant=reject_constant, object_pairs_hook=unique_object)
@@ -167,18 +169,18 @@ def request(base, operation, body=None, timeout=15):
         code = error.code
         error.close()
         unavailable = code in {401, 403, 404, 503}
-        messages = {400: 'The app rejected the requested fields.', 401: 'This installation requires authorization.',
+        messages = {400: 'The service rejected the requested fields.', 401: 'This installation requires authorization.',
                     403: 'This installation refused the request.', 404: 'The requested product or operation was not found.',
                     413: 'The request exceeds the installation limit.', 429: 'The installation has limited requests.',
                     502: 'The source could not provide a usable response.', 503: 'The requested capability is unavailable.'}
-        raise ToolError('http_error', messages.get(code, 'The app could not complete this request.'),
+        raise ToolError('http_error', messages.get(code, 'The service could not complete this request.'),
                         'Check the operation and installation status; respect limits before a new explicit request. No retry was made.',
                         EXIT_UNAVAILABLE if unavailable else EXIT_FAILED) from None
     except (urllib.error.URLError, TimeoutError, OSError):
-        raise ToolError('connection_failed', 'The app could not be reached.',
-                        'Check the app address and connection, then run status. No automatic retry was made.') from None
+        raise ToolError('connection_failed', 'The shared service could not be reached.',
+                        'Report the service connection failure to its operator. No automatic retry or web-app handoff was made.') from None
     except (ValueError, UnicodeError, RecursionError):
-        raise ToolError('invalid_response', 'The app returned an unsupported response.',
+        raise ToolError('invalid_response', 'The shared service returned an unsupported response.',
                         'Discard the result and ask the operator to check the version-1 API.') from None
 
 
@@ -586,11 +588,15 @@ def result_for(args, value):
         require(isinstance(value, dict) and value.get('ok') is True and type(value.get('apiVersion')) is int and
                 value['apiVersion'] == 1 and value.get('dataSource') in {'kroger-api', 'synthetic-fixture'})
         if args.operation == 'status':
+            identity = value.get('service')
+            require(isinstance(identity, dict) and set(identity) == {'name', 'apiVersion'} and
+                    identity['name'] == SERVICE_NAME and type(identity['apiVersion']) is int and identity['apiVersion'] == 1)
             require(type(value['configured']) is bool and value['environment'] in {'production', 'certification'})
             caps = value['capabilities']
             require(isinstance(caps, dict) and all(type(caps.get(k)) is bool for k in ('products', 'basket', 'cart', 'promotionService')))
+            require(caps['cart'] is False)
             result = {'ok': True, 'apiVersion': 1, 'configured': value['configured'], 'environment': value['environment'],
-                      'dataSource': value['dataSource'], 'capabilities': {k: caps[k] for k in ('products', 'basket', 'cart', 'promotionService')}}
+                      'service': value['service'], 'dataSource': value['dataSource'], 'capabilities': {k: caps[k] for k in ('products', 'basket', 'cart', 'promotionService')}}
             for key in ('history', 'promotionService'):
                 require(value[key]['status'] in {'available', 'unavailable', 'permission_required'})
                 result[key] = {'status': value[key]['status']}
@@ -601,7 +607,7 @@ def result_for(args, value):
             return estimate_result(args, value)
         return search_result(args, value)
     except (ValueError, KeyError, TypeError, OverflowError, RecursionError):
-        raise ToolError('invalid_response', 'The app result did not match the selected store, request or documented format.',
+        raise ToolError('invalid_response', 'The service result did not match the selected store, request or documented format.',
                         'Discard the result and ask the operator to check API compatibility. No fallback was made.') from None
 
 
@@ -611,15 +617,16 @@ class Parser(argparse.ArgumentParser):
 
 
 def parser():
-    p = Parser(allow_abbrev=False, description='Find current stores/products and estimate selected quantities through this app. The server may contact Kroger. No Cart, collection, database access or automatic history fallback.',
+    p = Parser(allow_abbrev=False, description='Find current stores/products and estimate selected quantities through the shared microservice. No web app, Cart, collection, database access or automatic history fallback.',
         epilog='Examples: shopping.py status --json; shopping.py stores --zip 00000 --dry-run --json; '
         'shopping.py products --store TEST0001 --term milk --summary-only --dry-run --json. '
-        'Set HOUSTON_APP_URL or --base-url to the actual app URL ending in /. '
-        'Use --data-use-approved only after actual source/recipient permission is established; the flag grants no rights. '
+        'Uses the bundled shared-service connection by default. Operators can override it with HOUSTON_SERVICE_URL or --base-url. '
+        'Ordinary current shopping returns validated facts by default; --summary-only selects diagnostics. '
+        '--data-use-approved remains an optional acknowledgement for compatibility and grants no rights. '
         'Exit 0: successful bounded response/complete/partial/preview; 1: request/format failure; 2: input; 3: capability/permission gap. '
         'Use promotions.py separately for stored-only reads and dated history.')
     p.add_argument('operation', choices=list(PATHS))
-    p.add_argument('--base-url', default=os.environ.get('HOUSTON_APP_URL', 'http://localhost:4173/apps/houston-i-love-kroger/'))
+    p.add_argument('--base-url', help='Operator override for the shared-service base URL ending in /. Never a web-app URL.')
     p.add_argument('--zip', dest='zip_code', help='Stores only: five US ZIP digits.')
     p.add_argument('--store', help='Exact person-confirmed eight-character store ID, preserving zeros.')
     p.add_argument('--term', help='Products/deals: explicit grocery or brand term, 3–80 characters, at most eight words.')
@@ -632,7 +639,7 @@ def parser():
                    help='Estimate: repeat 1–10 unique source selections, whole quantities 1–99; never prices.')
     p.add_argument('--timeout', type=float, default=15, help='Per-request timeout, 1–35 seconds; no retry.')
     p.add_argument('--summary-only', action='store_true', help='Fixed counts/status only, with no rows, IDs, prices or ZIP.')
-    p.add_argument('--data-use-approved', action='store_true', help='Acknowledge already established source/recipient rights; grants none.')
+    p.add_argument('--data-use-approved', action='store_true', help='Optional compatibility acknowledgement; ordinary current output needs no approval flag. Grants no rights.')
     p.add_argument('--json', action='store_true'); p.add_argument('--no-input', action='store_true')
     p.add_argument('--no-color', action='store_true'); p.add_argument('-q', '--quiet', action='store_true')
     p.add_argument('-v', '--verbose', action='store_true', help='Keeps the same bounded output; never raw exceptions.')
@@ -641,15 +648,16 @@ def parser():
 
 
 def run(args):
-    base, body = base_url(args.base_url), build_body(args)
+    try:
+        selected = resolve_service_url(args.base_url)
+    except ConnectionError as error:
+        raise ToolError('service_configuration_invalid', str(error), 'Restore the complete plugin or contact its service operator; do not open or install the web app.', EXIT_UNAVAILABLE) from None
+    base, body = base_url(selected), build_body(args)
     if not math.isfinite(args.timeout) or not 1 <= args.timeout <= 35:
         invalid('--timeout must be between 1 and 35 seconds.')
     if args.dry_run:
         return {'ok': True, 'status': 'preview', 'operation': args.operation,
                 'requestFields': sorted(body or {}), 'network': False, 'writes': False}, EXIT_OK
-    if args.operation != 'status' and not args.summary_only and not args.data_use_approved:
-        raise ToolError('recipient_permission_required', 'Returning source records needs actual source and recipient permission.',
-                        'Use --summary-only for bounded diagnostics, or establish actual rights before --data-use-approved.', EXIT_UNAVAILABLE)
     return result_for(args, request(base, args.operation, body, args.timeout))
 
 
@@ -659,7 +667,7 @@ def main(argv=None):
         human = sys.stdout.isatty() and not (args.json or args.no_input or args.quiet)
         color = human and not args.no_color and not os.environ.get('NO_COLOR')
         if human:
-            print('Houston I Love Kroger — current shopping through the app\nExplicit store/product reads and quantity estimates; no purchases or collection.', file=sys.stderr)
+            print('Houston I Love Kroger — current shopping through the shared service\nExplicit store/product reads and quantity estimates; no purchases or collection.', file=sys.stderr)
         result, code = run(args)
     except ToolError as error:
         result, code = {'ok': False, 'error': {'code': error.code, 'message': str(error), 'recovery': error.recovery}}, error.exit_code
